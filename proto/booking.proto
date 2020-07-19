@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package booking;
+
+option go_package = "booking/pb";
+
+service BookingService {
+  rpc BookNewCargo(BookNewCargoRequest) returns (BookNewCargoReply) {}
+  rpc RequestPossibleRoutesForCargo(RequestPossibleRoutesForCargoRequest)
+      returns (stream Itinerary) {}
+  rpc AssignCargoToRoute(AssignCargoToRouteRequest) returns (Error) {}
+  rpc ChangeDestination(ChangeDestinationRequest) returns (Error) {}
+}
+
+message BookNewCargoRequest {
+  string origin = 1;
+  string destination = 2;
+  string deadline = 3;
+}
+
+message BookNewCargoReply { string tracking_id = 1; }
+
+message RequestPossibleRoutesForCargoRequest { string tracking_id = 1; }
+
+message Itinerary {
+  message Leg {
+    string voyage_number = 1;
+    string load_location = 2;
+    string unload_location = 3;
+    string load_time = 4;
+    string unload_time = 5;
+  }
+  repeated Leg legs = 1;
+}
+
+message AssignCargoToRouteRequest {
+  string tracking_id = 1;
+  Itinerary itinerary = 2;
+}
+
+message Error { string error = 1; }
+
+message ChangeDestinationRequest {
+  string tracking_id = 1;
+  string destination = 2;
+}
