@@ -2,6 +2,7 @@ package domain
 
 import(
 	"time"
+	"errors"
 )
 
 // TrackingID uniquely identifies a particular cargo.
@@ -28,6 +29,17 @@ func NewCargo(id TrackingID, rs RouteSpecification) *Cargo {
 		// Delivery:           DeriveDeliveryFrom(rs, itinerary, history),
 	}
 }
+
+// CargoRepository provides access a cargo store.
+type CargoRepository interface {
+	Store(cargo *Cargo) error
+	Find(id TrackingID) (*Cargo, error)
+	FindAll() []*Cargo
+	NextTrackingID() TrackingID
+}
+
+// ErrUnknownCargo is used when a cargo could not be found.
+var ErrUnknownCargo = errors.New("unknown cargo")
 
 // RouteSpecification Contains information about a route: its origin,
 // destination and arrival deadline.
