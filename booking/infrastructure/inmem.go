@@ -2,6 +2,7 @@ package infrastructure
 
 import (
 	"sync"
+	"strings"
 	
 	"booking/domain"
 
@@ -46,7 +47,7 @@ func (cargoRepository) NextTrackingID() domain.TrackingID {
 // NewCargoRepository returns a new instance of a in-memory cargo repository.
 func NewCargoRepository() domain.CargoRepository {
 	return &cargoRepository{
-		cargos: make(map[shipping.TrackingID]*shipping.Cargo),
+		cargos: make(map[domain.TrackingID]*domain.Cargo),
 	}
 }
 
