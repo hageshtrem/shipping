@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package pathfinder;
+
+option go_package = "pathfinder/pb";
+
+import "google/protobuf/timestamp.proto";
+
+service PathfinderService {
+  rpc ShortestPath(ShortestPathReq) returns (stream TransitPath) {}
+}
+
+message ShortestPathReq {
+  string origin = 1;
+  string destination = 2;
+}
+
+message TransitPath {
+  message TransitEdge {
+    string voyage_number = 1;
+    string origin = 2;
+    string destination = 3;
+    google.protobuf.Timestamp departue = 4;
+    google.protobuf.Timestamp arrival = 5;
+  }
+  repeated TransitEdge edges = 1;
+}
