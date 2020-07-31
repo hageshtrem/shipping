@@ -1,16 +1,16 @@
 package infrastructure
 
 import (
-	"sync"
 	"strings"
-	
+	"sync"
+
 	"booking/domain"
 
 	"github.com/pborman/uuid"
 )
 
-type cargoRepository struct{
-	mtx sync.RWMutex
+type cargoRepository struct {
+	mtx    sync.RWMutex
 	cargos map[domain.TrackingID]*domain.Cargo
 }
 
@@ -40,7 +40,7 @@ func (r *cargoRepository) FindAll() []*domain.Cargo {
 	return c
 }
 
-func (cargoRepository) NextTrackingID() domain.TrackingID {
+func (*cargoRepository) NextTrackingID() domain.TrackingID {
 	return domain.TrackingID(strings.Split(strings.ToUpper(uuid.New()), "-")[0])
 }
 
@@ -50,4 +50,3 @@ func NewCargoRepository() domain.CargoRepository {
 		cargos: make(map[domain.TrackingID]*domain.Cargo),
 	}
 }
-

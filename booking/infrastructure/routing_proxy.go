@@ -55,7 +55,9 @@ func (s *proxyService) FetchRoutesForSpecification(rs domain.RouteSpecification)
 // NewRoutingService returns implementation for domain.RoutingService.
 func NewRoutingService(address string) (domain.RoutingService, error) {
 	// Set up a connection to the server.
-	conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithBlock())
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	conn, err := grpc.DialContext(ctx, address, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
 		return nil, err
 	}
@@ -83,5 +85,5 @@ func assembly(path *pathfinderPb.TransitPath) (domain.Itinerary, error) {
 			UnloadTime:     unload,
 		})
 	}
-	return domain.Itinerary{legs}, nil
+	return domain.Itinerary{Legs: legs}, nil
 }
