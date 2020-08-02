@@ -14,17 +14,23 @@ type Service interface {
 	// BookNewCargo registers a new cargo in the tracking system, not yet
 	// routed.
 	BookNewCargo(origin domain.UNLocode, destination domain.UNLocode, deadline time.Time) (domain.TrackingID, error)
+
+	// RequestPossibleRoutesForCargo requests a list of itineraries describing
+	// possible routes for this cargo.
+	RequestPossibleRoutesForCargo(id domain.TrackingID) []domain.Itinerary
 }
 
 // NewService creates a booking service with necessary dependencies.
-func NewService(cargos domain.CargoRepository) Service {
+func NewService(cargos domain.CargoRepository, rs domain.RoutingService) Service {
 	return &service{
-		cargos: cargos,
+		cargos:         cargos,
+		routingService: rs,
 	}
 }
 
 type service struct {
-	cargos domain.CargoRepository
+	cargos         domain.CargoRepository
+	routingService domain.RoutingService
 }
 
 func (s *service) BookNewCargo(origin domain.UNLocode, destination domain.UNLocode, deadline time.Time) (domain.TrackingID, error) {
@@ -46,4 +52,17 @@ func (s *service) BookNewCargo(origin domain.UNLocode, destination domain.UNLoco
 	}
 
 	return c.TrackingID, nil
+}
+
+func (s *service) RequestPossibleRoutesForCargo(id domain.TrackingID) []domain.Itinerary {
+	if id == "" {
+		return nil
+	}
+
+	c, err := s.cargos.Find(id)
+	if err != nil {
+		return []domain.Itinerary{}
+	}
+
+	return s.routingService.FetchRoutesForSpecification(c.RouteSpecification)
 }
