@@ -16,4 +16,4 @@ gen-booking:
 	@protoc  --go_out=booking/pb --go-grpc_out=booking/pb proto/pathfinder.proto
 
 
-.PHONY: gen, gen-booking, gen-pathfinder, build, build-pathfinder, run-pathfinder
+.PHONY: gen gen-booking gen-pathfinder build build-pathfinder run-pathfinder
