@@ -36,6 +36,12 @@ func (c *Cargo) AssignToRoute(itinerary Itinerary) {
 	c.Delivery = c.Delivery.UpdateOnRouting(c.RouteSpecification, c.Itinerary)
 }
 
+// SpecifyNewRoute specifies a new route for this cargo.
+func (c *Cargo) SpecifyNewRoute(rs RouteSpecification) {
+	c.RouteSpecification = rs
+	c.Delivery = c.Delivery.UpdateOnRouting(c.RouteSpecification, c.Itinerary)
+}
+
 // CargoRepository provides access a cargo store.
 type CargoRepository interface {
 	Store(cargo *Cargo) error

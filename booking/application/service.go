@@ -22,18 +22,23 @@ type Service interface {
 	// AssignCargoToRoute assigns a cargo to the route specified by the
 	// itinerary.
 	AssignCargoToRoute(id domain.TrackingID, itinerary domain.Itinerary) error
+
+	// ChangeDestination changes the destination of a shipping.
+	ChangeDestination(id domain.TrackingID, destination domain.UNLocode) error
 }
 
 // NewService creates a booking service with necessary dependencies.
-func NewService(cargos domain.CargoRepository, rs domain.RoutingService) Service {
+func NewService(cargos domain.CargoRepository, locations domain.LocationRepository, rs domain.RoutingService) Service {
 	return &service{
 		cargos:         cargos,
+		locations:      locations,
 		routingService: rs,
 	}
 }
 
 type service struct {
 	cargos         domain.CargoRepository
+	locations      domain.LocationRepository
 	routingService domain.RoutingService
 }
 
@@ -84,4 +89,32 @@ func (s *service) AssignCargoToRoute(id domain.TrackingID, itinerary domain.Itin
 	c.AssignToRoute(itinerary)
 
 	return s.cargos.Store(c)
+}
+
+func (s *service) ChangeDestination(id domain.TrackingID, destination domain.UNLocode) error {
+	if id == "" || destination == "" {
+		return ErrInvalidArgument
+	}
+
+	c, err := s.cargos.Find(id)
+	if err != nil {
+		return err
+	}
+
+	l, err := s.locations.Find(destination)
+	if err != nil {
+		return err
+	}
+
+	c.SpecifyNewRoute(domain.RouteSpecification{
+		Origin:          c.Origin,
+		Destination:     l.UNLocode,
+		ArrivalDeadline: c.RouteSpecification.ArrivalDeadline,
+	})
+
+	if err := s.cargos.Store(c); err != nil {
+		return err
+	}
+
+	return nil
 }

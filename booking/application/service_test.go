@@ -21,7 +21,7 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	S = NewService(infrastructure.NewCargoRepository(), rs)
+	S = NewService(infrastructure.NewCargoRepository(), infrastructure.NewLocationRepository(), rs)
 }
 
 func bookDefaultCargo() (domain.TrackingID, error) {
@@ -56,6 +56,17 @@ func TestAssignCargoToRoute(t *testing.T) {
 
 	routes := S.RequestPossibleRoutesForCargo(cargoID)
 	err = S.AssignCargoToRoute(cargoID, routes[0])
+	checkErr(err, t)
+}
+
+func TestChangeDestination(t *testing.T) {
+	cargoID, err := bookDefaultCargo()
+	checkErr(err, t)
+
+	err = S.ChangeDestination(cargoID, "")
+	t.Logf("Invalid destination error: %v", err)
+
+	err = S.ChangeDestination(cargoID, domain.FIHEL)
 	checkErr(err, t)
 }
 
