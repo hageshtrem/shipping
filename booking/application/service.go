@@ -18,6 +18,10 @@ type Service interface {
 	// RequestPossibleRoutesForCargo requests a list of itineraries describing
 	// possible routes for this cargo.
 	RequestPossibleRoutesForCargo(id domain.TrackingID) []domain.Itinerary
+
+	// AssignCargoToRoute assigns a cargo to the route specified by the
+	// itinerary.
+	AssignCargoToRoute(id domain.TrackingID, itinerary domain.Itinerary) error
 }
 
 // NewService creates a booking service with necessary dependencies.
@@ -65,4 +69,19 @@ func (s *service) RequestPossibleRoutesForCargo(id domain.TrackingID) []domain.I
 	}
 
 	return s.routingService.FetchRoutesForSpecification(c.RouteSpecification)
+}
+
+func (s *service) AssignCargoToRoute(id domain.TrackingID, itinerary domain.Itinerary) error {
+	if id == "" || len(itinerary.Legs) == 0 {
+		return ErrInvalidArgument
+	}
+
+	c, err := s.cargos.Find(id)
+	if err != nil {
+		return err
+	}
+
+	c.AssignToRoute(itinerary)
+
+	return s.cargos.Store(c)
 }

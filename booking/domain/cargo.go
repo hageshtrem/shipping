@@ -30,6 +30,12 @@ func NewCargo(id TrackingID, rs RouteSpecification) *Cargo {
 	}
 }
 
+// AssignToRoute attaches a new itinerary to this cargo.
+func (c *Cargo) AssignToRoute(itinerary Itinerary) {
+	c.Itinerary = itinerary
+	c.Delivery = c.Delivery.UpdateOnRouting(c.RouteSpecification, c.Itinerary)
+}
+
 // CargoRepository provides access a cargo store.
 type CargoRepository interface {
 	Store(cargo *Cargo) error
