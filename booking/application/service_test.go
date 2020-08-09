@@ -70,6 +70,14 @@ func TestChangeDestination(t *testing.T) {
 	checkErr(err, t)
 }
 
+func TestLocations(t *testing.T) {
+	locations := S.Locations()
+	if len(locations) == 0 {
+		t.Fatal("Empty locations")
+	}
+	t.Log(locations)
+}
+
 func checkErr(err error, t *testing.T) {
 	if err != nil {
 		t.Fatal(err)

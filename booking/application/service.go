@@ -25,6 +25,9 @@ type Service interface {
 
 	// ChangeDestination changes the destination of a shipping.
 	ChangeDestination(id domain.TrackingID, destination domain.UNLocode) error
+
+	// Locations returns a list of registered locations.
+	Locations() []Location
 }
 
 // NewService creates a booking service with necessary dependencies.
@@ -117,4 +120,21 @@ func (s *service) ChangeDestination(id domain.TrackingID, destination domain.UNL
 	}
 
 	return nil
+}
+
+func (s *service) Locations() []Location {
+	var result []Location
+	for _, v := range s.locations.FindAll() {
+		result = append(result, Location{
+			UNLocode: string(v.UNLocode),
+			Name:     v.Name,
+		})
+	}
+	return result
+}
+
+// Location is a read model for booking views.
+type Location struct {
+	UNLocode string `json:"locode"`
+	Name     string `json:"name"`
 }
