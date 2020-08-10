@@ -78,6 +78,21 @@ func TestLocations(t *testing.T) {
 	t.Log(locations)
 }
 
+func TestLoadCargo(t *testing.T) {
+	cargoID, err := bookDefaultCargo()
+	checkErr(err, t)
+	cargo, err := S.LoadCargo(cargoID)
+	checkErr(err, t)
+	t.Log(cargo)
+}
+
+func TestCargos(t *testing.T) {
+	cargos := S.Cargos()
+	if len(cargos) == 0 {
+		t.Fatal("Not enought cargos")
+	}
+}
+
 func checkErr(err error, t *testing.T) {
 	if err != nil {
 		t.Fatal(err)

@@ -28,6 +28,12 @@ type Service interface {
 
 	// Locations returns a list of registered locations.
 	Locations() []Location
+
+	// LoadCargo returns a read model of a shipping.
+	LoadCargo(id domain.TrackingID) (Cargo, error)
+
+	// Cargos returns a list of all cargos that have been booked.
+	Cargos() []Cargo
 }
 
 // NewService creates a booking service with necessary dependencies.
@@ -137,4 +143,48 @@ func (s *service) Locations() []Location {
 type Location struct {
 	UNLocode string `json:"locode"`
 	Name     string `json:"name"`
+}
+
+func (s *service) LoadCargo(id domain.TrackingID) (Cargo, error) {
+	if id == "" {
+		return Cargo{}, ErrInvalidArgument
+	}
+
+	c, err := s.cargos.Find(id)
+	if err != nil {
+		return Cargo{}, err
+	}
+
+	return assemble(c), nil
+}
+
+func (s *service) Cargos() []Cargo {
+	var result []Cargo
+	for _, c := range s.cargos.FindAll() {
+		result = append(result, assemble(c))
+	}
+	return result
+}
+
+// Cargo is a read model for booking views.
+type Cargo struct {
+	ArrivalDeadline time.Time    `json:"arrival_deadline"`
+	Destination     string       `json:"destination"`
+	Legs            []domain.Leg `json:"legs,omitempty"`
+	Misrouted       bool         `json:"misrouted"`
+	Origin          string       `json:"origin"`
+	Routed          bool         `json:"routed"`
+	TrackingID      string       `json:"tracking_id"`
+}
+
+func assemble(c *domain.Cargo) Cargo {
+	return Cargo{
+		TrackingID:      string(c.TrackingID),
+		Origin:          string(c.Origin),
+		Destination:     string(c.RouteSpecification.Destination),
+		Misrouted:       c.Delivery.RoutingStatus == domain.Misrouted,
+		Routed:          !c.Itinerary.IsEmpty(),
+		ArrivalDeadline: c.RouteSpecification.ArrivalDeadline,
+		Legs:            c.Itinerary.Legs,
+	}
 }
