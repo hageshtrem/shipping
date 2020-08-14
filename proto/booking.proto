@@ -4,34 +4,39 @@ package booking;
 
 option go_package = "booking/pb";
 
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
 service BookingService {
-  rpc BookNewCargo(BookNewCargoRequest) returns (BookNewCargoReply) {}
+  rpc BookNewCargo(BookNewCargoRequest) returns (BookNewCargoResponse) {}
   rpc RequestPossibleRoutesForCargo(RequestPossibleRoutesForCargoRequest)
       returns (stream Itinerary) {}
   rpc AssignCargoToRoute(AssignCargoToRouteRequest) returns (Error) {}
   rpc ChangeDestination(ChangeDestinationRequest) returns (Error) {}
+  rpc Locations(google.protobuf.Empty) returns (LocationsResponse) {}
+  rpc LoadCargo(LoadCargoRequest) returns (LoadCargoResponse) {}
+  rpc Cargos(google.protobuf.Empty) returns (CargosResponse) {}
 }
 
 message BookNewCargoRequest {
   string origin = 1;
   string destination = 2;
-  string deadline = 3;
+  google.protobuf.Timestamp deadline = 3;
 }
 
-message BookNewCargoReply { string tracking_id = 1; }
+message BookNewCargoResponse { string tracking_id = 1; }
 
 message RequestPossibleRoutesForCargoRequest { string tracking_id = 1; }
 
-message Itinerary {
-  message Leg {
-    string voyage_number = 1;
-    string load_location = 2;
-    string unload_location = 3;
-    string load_time = 4;
-    string unload_time = 5;
-  }
-  repeated Leg legs = 1;
+message Leg {
+  string voyage_number = 1;
+  string load_location = 2;
+  string unload_location = 3;
+  google.protobuf.Timestamp load_time = 4;
+  google.protobuf.Timestamp unload_time = 5;
 }
+
+message Itinerary { repeated Leg legs = 1; }
 
 message AssignCargoToRouteRequest {
   string tracking_id = 1;
@@ -44,3 +49,32 @@ message ChangeDestinationRequest {
   string tracking_id = 1;
   string destination = 2;
 }
+
+message LocationsResponse {
+  message Location {
+    string un_locode = 1;
+    string name = 2;
+  }
+  repeated Location locations = 1;
+}
+
+message LoadCargoRequest { string tracking_id = 1; }
+
+message Cargo {
+  google.protobuf.Timestamp arrival_deadline = 1;
+  string destination = 2;
+  repeated Leg legs = 3;
+  bool misrouted = 4;
+  string origin = 5;
+  bool routed = 6;
+  string tracking_id = 7;
+}
+
+message LoadCargoResponse {
+  oneof result {
+    Cargo cargo = 1;
+    string error = 2;
+  }
+}
+
+message CargosResponse { repeated Cargo cargos = 1; }
