@@ -13,7 +13,7 @@ var S Service
 var routingServer string = "localhost:50051"
 
 func init() {
-	e := os.Getenv("ADDR")
+	e := os.Getenv("ROUTING_ADDR")
 	if e != "" {
 		routingServer = e
 	}
