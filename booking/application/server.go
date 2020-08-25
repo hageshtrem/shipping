@@ -57,7 +57,7 @@ func (s *grpcServer) AssignCargoToRoute(_ context.Context, req *pb.AssignCargoTo
 	if err != nil {
 		return &pb.Error{Error: err.Error()}, nil
 	}
-	return nil, nil
+	return &pb.Error{}, nil
 }
 
 func (s *grpcServer) ChangeDestination(_ context.Context, req *pb.ChangeDestinationRequest) (*pb.Error, error) {
@@ -66,7 +66,7 @@ func (s *grpcServer) ChangeDestination(_ context.Context, req *pb.ChangeDestinat
 	if err := s.service.ChangeDestination(id, dest); err != nil {
 		return &pb.Error{Error: err.Error()}, nil
 	}
-	return nil, nil
+	return &pb.Error{}, nil
 }
 
 func (s *grpcServer) Locations(_ context.Context, _ *empty.Empty) (*pb.LocationsResponse, error) {
