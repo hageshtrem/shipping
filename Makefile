@@ -1,5 +1,5 @@
 run-pathfinder: build-pathfinder
-	@docker run -d -p 50051:50051 pathfinder:latest
+	@docker run --name pathfinder -d -p 50051:50051 pathfinder:latest
 
 build: build-pathfinder
 
