@@ -7,6 +7,8 @@ import (
 
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/empty"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type grpcServer struct {
@@ -23,11 +25,11 @@ func (s *grpcServer) BookNewCargo(_ context.Context, req *pb.BookNewCargoRequest
 	destination := domain.UNLocode(req.GetDestination())
 	deadline, err := ptypes.Timestamp(req.GetDeadline())
 	if err != nil {
-		return nil, err
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 	trackingID, err := s.service.BookNewCargo(origin, destination, deadline)
 	if err != nil {
-		return nil, err
+		return nil, status.Error(codes.Unknown, err.Error())
 	}
 	return &pb.BookNewCargoResponse{TrackingId: string(trackingID)}, nil
 }
@@ -39,7 +41,7 @@ func (s *grpcServer) RequestPossibleRoutesForCargo(req *pb.RequestPossibleRoutes
 	for _, itin := range itineraries {
 		pbItin, err := encodeItinerary(&itin)
 		if err != nil {
-			return err
+			return status.Error(codes.Unknown, err.Error())
 		}
 		stream.Send(pbItin)
 	}
@@ -47,26 +49,26 @@ func (s *grpcServer) RequestPossibleRoutesForCargo(req *pb.RequestPossibleRoutes
 	return nil
 }
 
-func (s *grpcServer) AssignCargoToRoute(_ context.Context, req *pb.AssignCargoToRouteRequest) (*pb.Error, error) {
+func (s *grpcServer) AssignCargoToRoute(_ context.Context, req *pb.AssignCargoToRouteRequest) (*empty.Empty, error) {
 	id := domain.TrackingID(req.GetTrackingId())
 	itinerary, err := decodeItinerary(req.GetItinerary())
 	if err != nil {
-		return nil, err
+		return nil, status.Error(codes.Unknown, err.Error())
 	}
 	err = s.service.AssignCargoToRoute(id, *itinerary)
 	if err != nil {
-		return &pb.Error{Error: err.Error()}, nil
+		return nil, status.Error(codes.Unknown, err.Error())
 	}
-	return &pb.Error{}, nil
+	return &empty.Empty{}, nil
 }
 
-func (s *grpcServer) ChangeDestination(_ context.Context, req *pb.ChangeDestinationRequest) (*pb.Error, error) {
+func (s *grpcServer) ChangeDestination(_ context.Context, req *pb.ChangeDestinationRequest) (*empty.Empty, error) {
 	id := domain.TrackingID(req.GetTrackingId())
 	dest := domain.UNLocode(req.GetDestination())
 	if err := s.service.ChangeDestination(id, dest); err != nil {
-		return &pb.Error{Error: err.Error()}, nil
+		return nil, status.Error(codes.Unknown, err.Error())
 	}
-	return &pb.Error{}, nil
+	return &empty.Empty{}, nil
 }
 
 func (s *grpcServer) Locations(_ context.Context, _ *empty.Empty) (*pb.LocationsResponse, error) {
@@ -85,14 +87,15 @@ func (s *grpcServer) LoadCargo(_ context.Context, req *pb.LoadCargoRequest) (*pb
 	id := domain.TrackingID(req.GetTrackingId())
 	cargo, err := s.service.LoadCargo(id)
 	if err != nil {
-		return &pb.LoadCargoResponse{Result: &pb.LoadCargoResponse_Error{Error: err.Error()}}, err
-	}
-	pbCargo, err := encodeCargo(&cargo)
-	if err != nil {
-		return &pb.LoadCargoResponse{Result: &pb.LoadCargoResponse_Error{Error: err.Error()}}, err
+		return nil, status.Error(codes.Unknown, err.Error())
 	}
 
-	return &pb.LoadCargoResponse{Result: &pb.LoadCargoResponse_Cargo{Cargo: pbCargo}}, nil
+	pbCargo, err := encodeCargo(&cargo)
+	if err != nil {
+		return nil, status.Error(codes.Unknown, err.Error())
+	}
+
+	return &pb.LoadCargoResponse{Cargo: pbCargo}, nil
 }
 
 func (s *grpcServer) Cargos(_ context.Context, _ *empty.Empty) (*pb.CargosResponse, error) {
@@ -101,7 +104,7 @@ func (s *grpcServer) Cargos(_ context.Context, _ *empty.Empty) (*pb.CargosRespon
 	for _, cargo := range cargos {
 		pbCargo, err := encodeCargo(&cargo)
 		if err != nil {
-			return nil, err
+			return nil, status.Error(codes.Unknown, err.Error())
 		}
 		pbCargos = append(pbCargos, pbCargo)
 	}

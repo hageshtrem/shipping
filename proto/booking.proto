@@ -11,8 +11,10 @@ service BookingService {
   rpc BookNewCargo(BookNewCargoRequest) returns (BookNewCargoResponse) {}
   rpc RequestPossibleRoutesForCargo(RequestPossibleRoutesForCargoRequest)
       returns (stream Itinerary) {}
-  rpc AssignCargoToRoute(AssignCargoToRouteRequest) returns (Error) {}
-  rpc ChangeDestination(ChangeDestinationRequest) returns (Error) {}
+  rpc AssignCargoToRoute(AssignCargoToRouteRequest)
+      returns (google.protobuf.Empty) {}
+  rpc ChangeDestination(ChangeDestinationRequest)
+      returns (google.protobuf.Empty) {}
   rpc Locations(google.protobuf.Empty) returns (LocationsResponse) {}
   rpc LoadCargo(LoadCargoRequest) returns (LoadCargoResponse) {}
   rpc Cargos(google.protobuf.Empty) returns (CargosResponse) {}
@@ -43,8 +45,6 @@ message AssignCargoToRouteRequest {
   Itinerary itinerary = 2;
 }
 
-message Error { string error = 1; }
-
 message ChangeDestinationRequest {
   string tracking_id = 1;
   string destination = 2;
@@ -70,11 +70,6 @@ message Cargo {
   string tracking_id = 7;
 }
 
-message LoadCargoResponse {
-  oneof result {
-    Cargo cargo = 1;
-    string error = 2;
-  }
-}
+message LoadCargoResponse { Cargo cargo = 1; }
 
 message CargosResponse { repeated Cargo cargos = 1; }
