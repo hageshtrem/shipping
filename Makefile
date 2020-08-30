@@ -1,10 +1,5 @@
-run-pathfinder: build-pathfinder
-	@docker run --name pathfinder -d -p 50051:50051 pathfinder:latest
-
-build: build-pathfinder
-
-build-pathfinder: gen-pathfinder
-	docker build --build-arg PORT=:50051 --tag pathfinder:latest pathfinder
+run: gen
+	docker-compose up -d
 
 gen: gen-booking gen-pathfinder
 
@@ -16,4 +11,4 @@ gen-booking:
 	@protoc  --go_out=booking/pb --go-grpc_out=booking/pb proto/pathfinder.proto
 
 
-.PHONY: gen gen-booking gen-pathfinder build build-pathfinder run-pathfinder
+.PHONY: gen gen-booking gen-pathfinder run

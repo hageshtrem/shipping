@@ -1,0 +1,17 @@
+version: "3.8"
+services:
+  pathfinder:
+    build: ./pathfinder
+    # ports:
+    #   - "50051:50051"
+    environment:
+      PORT: ":50051"
+  booking:
+    build: ./booking
+    depends_on:
+      - pathfinder
+    ports:
+      - "5051:5051"
+    environment:
+      PORT: ":5051"
+      ROUTING_ADDR: "pathfinder:50051"

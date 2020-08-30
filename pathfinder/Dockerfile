@@ -6,7 +6,4 @@ RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o pathfinder ./cmd/
 FROM alpine:3.12
 WORKDIR /app
 COPY --from=builder /go/src/pathfinder/pathfinder .
-ARG PORT
-ENV PORT $PORT
-EXPOSE $PORT
 CMD ["./pathfinder"]
