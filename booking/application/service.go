@@ -2,8 +2,12 @@ package application
 
 import (
 	"booking/domain"
+	"booking/pb"
 	"errors"
+	"log"
 	"time"
+
+	"github.com/golang/protobuf/proto"
 )
 
 // ErrInvalidArgument is returned when one or more arguments are invalid.
@@ -37,11 +41,12 @@ type Service interface {
 }
 
 // NewService creates a booking service with necessary dependencies.
-func NewService(cargos domain.CargoRepository, locations domain.LocationRepository, rs domain.RoutingService) Service {
+func NewService(cargos domain.CargoRepository, locations domain.LocationRepository, rs domain.RoutingService, eventBus EventBus) Service {
 	return &service{
 		cargos:         cargos,
 		locations:      locations,
 		routingService: rs,
+		eventBus:       eventBus,
 	}
 }
 
@@ -49,6 +54,7 @@ type service struct {
 	cargos         domain.CargoRepository
 	locations      domain.LocationRepository
 	routingService domain.RoutingService
+	eventBus       EventBus
 }
 
 func (s *service) BookNewCargo(origin domain.UNLocode, destination domain.UNLocode, deadline time.Time) (domain.TrackingID, error) {
@@ -67,6 +73,16 @@ func (s *service) BookNewCargo(origin domain.UNLocode, destination domain.UNLoco
 
 	if err := s.cargos.Store(c); err != nil {
 		return "", err
+	}
+
+	event := &pb.NewCargoBooked{
+		TrackingId:  string(c.TrackingID),
+		Origin:      string(c.Origin),
+		Destination: string(c.RouteSpecification.Destination),
+	}
+
+	if err := s.eventBus.Publish(event); err != nil {
+		log.Printf("EVENT BUS ERROR: %v", err)
 	}
 
 	return c.TrackingID, nil
@@ -187,4 +203,8 @@ func assemble(c *domain.Cargo) Cargo {
 		ArrivalDeadline: c.RouteSpecification.ArrivalDeadline,
 		Legs:            c.Itinerary.Legs,
 	}
+}
+
+type EventBus interface {
+	Publish(proto.Message) error
 }

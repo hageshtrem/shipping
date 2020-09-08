@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package booking;
+
+option go_package = "booking/pb";
+
+message NewCargoBooked {
+  string tracking_id = 1;
+  string origin = 2;
+  string destination = 3;
+}
+
+message CargoRouteAssigned {}
+
+message CargoDestinationChanged {}
