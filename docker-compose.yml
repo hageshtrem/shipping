@@ -6,8 +6,11 @@ services:
     #   - "50051:50051"
     environment:
       PORT: ":50051"
+  rabbitmq:
+    image: "rabbitmq:3-management"
   booking:
     build: ./booking
+    restart: always
     depends_on:
       - pathfinder
     ports:
@@ -15,3 +18,4 @@ services:
     environment:
       PORT: ":5051"
       ROUTING_ADDR: "pathfinder:50051"
+      RABBIT_URI: "amqp://guest:guest@rabbitmq:5672/"

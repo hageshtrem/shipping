@@ -13,22 +13,26 @@ import (
 )
 
 const (
-	port        = ":5051"
-	routingAddr = "localhost:50051"
+	PORT         = ":5051"
+	ROUTING_ADDR = "localhost:50051"
+	RABBIT_URI   = "amqp://guest:guest@localhost:5672/"
 )
 
 func main() {
 	var (
-		port        = envString("PORT", port)
-		routingAddr = envString("ROUTING_ADDR", routingAddr)
+		port        = envString("PORT", PORT)
+		routingAddr = envString("ROUTING_ADDR", ROUTING_ADDR)
+		rabbit_uri  = envString("RABBIT_URI", RABBIT_URI)
 	)
 
 	routingSvc, err := infra.NewRoutingService(routingAddr)
 	checkErr(err)
 	cargos := infra.NewCargoRepository()
 	locations := infra.NewLocationRepository()
+	eventBus, err := infra.NewEventBus(rabbit_uri)
+	checkErr(err)
 
-	bookingSvc := app.NewService(cargos, locations, routingSvc)
+	bookingSvc := app.NewService(cargos, locations, routingSvc, eventBus)
 
 	lis, err := net.Listen("tcp", port)
 	checkErr(err)
