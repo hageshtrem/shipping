@@ -11,3 +11,22 @@ type Service interface {
 	// Track returns a cargo matching a tracking ID.
 	Track(id string) (Cargo, error)
 }
+
+type service struct {
+	cargos CargoViewModelRepository
+}
+
+func (s *service) Track(id string) (Cargo, error) {
+	if id == "" {
+		return Cargo{}, ErrInvalidArgument
+	}
+	c, err := s.cargos.Find(id)
+	if err != nil {
+		return Cargo{}, err
+	}
+	return *c, nil
+}
+
+func NewService(cargos CargoViewModelRepository) Service {
+	return &service{cargos}
+}

@@ -7,14 +7,19 @@ type TrackingID string
 
 // Cargo is a read model for tracking views.
 type Cargo struct {
-	TrackingID           string    `json:"tracking_id"`
-	StatusText           string    `json:"status_text"`
-	Origin               string    `json:"origin"`
-	Destination          string    `json:"destination"`
-	ETA                  time.Time `json:"eta"`
-	NextExpectedActivity string    `json:"next_expected_activity"`
-	ArrivalDeadline      time.Time `json:"arrival_deadline"`
-	// Events               []Event   `json:"events"`
+	TrackingID           string
+	StatusText           string
+	Origin               string
+	Destination          string
+	ETA                  time.Time
+	NextExpectedActivity string
+	ArrivalDeadline      time.Time
+	Events               []Event
+}
+
+type Event struct {
+	Description string
+	Expected    bool
 }
 
 type CargoViewModelRepository interface {

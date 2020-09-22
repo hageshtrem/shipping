@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package tracking;
+
+option go_package = "tracking/pb";
+
+import "google/protobuf/timestamp.proto";
+
+service TrackingService {
+  rpc Track(TrackingID) returns (Cargo) {}
+}
+
+message TrackingID { string id = 1; }
+
+message Cargo {
+  string tracking_id = 1;
+  string status_text = 2;
+  string origin = 3;
+  string destination = 4;
+  google.protobuf.Timestamp eta = 5;
+  string next_expected_activity = 6;
+  google.protobuf.Timestamp arrival_deadline = 7;
+  repeated Event events = 8;
+}
+
+message Event {
+  string description = 1;
+  bool expected = 2;
+}
