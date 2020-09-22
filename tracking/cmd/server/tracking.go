@@ -2,22 +2,24 @@ package main
 
 import (
 	"log"
+	"net"
 	"os"
 	"tracking/application"
 	"tracking/infrastructure"
+	"tracking/pb"
 	booking "tracking/pb/booking/pb"
+
+	"google.golang.org/grpc"
 )
 
 const (
-	// PORT         = ":5051"
-	// ROUTING_ADDR = "localhost:50051"
+	PORT       = ":5052"
 	RABBIT_URI = "amqp://guest:guest@localhost:5672/"
 )
 
 func main() {
 	var (
-		// port        = envString("PORT", PORT)
-		// routingAddr = envString("ROUTING_ADDR", ROUTING_ADDR)
+		port       = envString("PORT", PORT)
 		rabbit_uri = envString("RABBIT_URI", RABBIT_URI)
 	)
 
@@ -29,9 +31,19 @@ func main() {
 	err = eventBus.Subscribe(&booking.NewCargoBooked{}, newCargoEH)
 	checkErr(err)
 
-	forever := make(chan bool)
-	log.Printf(" [*] Waiting for logs. To exit press CTRL+C")
-	<-forever
+	trackingSvc := application.NewService(cargos)
+
+	lis, err := net.Listen("tcp", port)
+	checkErr(err)
+
+	s := application.NewServer(trackingSvc)
+	gs := grpc.NewServer()
+
+	pb.RegisterTrackingServiceServer(gs, s)
+	log.Printf("Service started at %s", port)
+	if err := gs.Serve(lis); err != nil {
+		log.Fatalf("failed to serve: %v", err)
+	}
 }
 
 func envString(env, fallback string) string {
