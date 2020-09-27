@@ -31,8 +31,9 @@ func main() {
 	locations := infra.NewLocationRepository()
 	eventBus, err := infra.NewEventBus(rabbit_uri)
 	checkErr(err)
+	eventService := app.NewEventService(eventBus)
 
-	bookingSvc := app.NewService(cargos, locations, routingSvc, eventBus)
+	bookingSvc := app.NewService(cargos, locations, routingSvc, eventService)
 
 	lis, err := net.Listen("tcp", port)
 	checkErr(err)

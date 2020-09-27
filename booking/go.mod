@@ -4,6 +4,7 @@ go 1.14
 
 require (
 	github.com/golang/protobuf v1.4.2
+	github.com/marcusolsson/goddd v1.0.0
 	github.com/mdempsky/gocode v0.0.0-20200405233807-4acdcbdea79d // indirect
 	github.com/pborman/uuid v1.2.0
 	github.com/streadway/amqp v1.0.0

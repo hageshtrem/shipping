@@ -1,13 +1,11 @@
 package application
 
+// TODO: add transactions
 import (
 	"booking/domain"
-	"booking/pb"
 	"errors"
 	"log"
 	"time"
-
-	"github.com/golang/protobuf/proto"
 )
 
 // ErrInvalidArgument is returned when one or more arguments are invalid.
@@ -41,12 +39,12 @@ type Service interface {
 }
 
 // NewService creates a booking service with necessary dependencies.
-func NewService(cargos domain.CargoRepository, locations domain.LocationRepository, rs domain.RoutingService, eventBus EventBus) Service {
+func NewService(cargos domain.CargoRepository, locations domain.LocationRepository, rs domain.RoutingService, eventService EventService) Service {
 	return &service{
 		cargos:         cargos,
 		locations:      locations,
 		routingService: rs,
-		eventBus:       eventBus,
+		eventService:   eventService,
 	}
 }
 
@@ -54,7 +52,7 @@ type service struct {
 	cargos         domain.CargoRepository
 	locations      domain.LocationRepository
 	routingService domain.RoutingService
-	eventBus       EventBus
+	eventService   EventService
 }
 
 func (s *service) BookNewCargo(origin domain.UNLocode, destination domain.UNLocode, deadline time.Time) (domain.TrackingID, error) {
@@ -75,13 +73,7 @@ func (s *service) BookNewCargo(origin domain.UNLocode, destination domain.UNLoco
 		return "", err
 	}
 
-	event := &pb.NewCargoBooked{
-		TrackingId:  string(c.TrackingID),
-		Origin:      string(c.Origin),
-		Destination: string(c.RouteSpecification.Destination),
-	}
-
-	if err := s.eventBus.Publish(event); err != nil {
+	if err := s.eventService.NewCargoBooked(c); err != nil {
 		log.Printf("EVENT BUS ERROR: %v", err)
 	}
 
@@ -113,7 +105,11 @@ func (s *service) AssignCargoToRoute(id domain.TrackingID, itinerary domain.Itin
 
 	c.AssignToRoute(itinerary)
 
-	return s.cargos.Store(c)
+	if err := s.cargos.Store(c); err != nil {
+		return err
+	}
+
+	return s.eventService.CargoToRouteAssigned(c)
 }
 
 func (s *service) ChangeDestination(id domain.TrackingID, destination domain.UNLocode) error {
@@ -141,7 +137,7 @@ func (s *service) ChangeDestination(id domain.TrackingID, destination domain.UNL
 		return err
 	}
 
-	return nil
+	return s.eventService.DestinationChanged(c)
 }
 
 func (s *service) Locations() []Location {
@@ -203,8 +199,4 @@ func assemble(c *domain.Cargo) Cargo {
 		ArrivalDeadline: c.RouteSpecification.ArrivalDeadline,
 		Legs:            c.Itinerary.Legs,
 	}
-}
-
-type EventBus interface {
-	Publish(proto.Message) error
 }
