@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+option go_package = "booking/pb";
+
+import "google/protobuf/timestamp.proto";
+
+message Leg {
+  string voyage_number = 1;
+  string load_location = 2;
+  string unload_location = 3;
+  google.protobuf.Timestamp load_time = 4;
+  google.protobuf.Timestamp unload_time = 5;
+}
+
+message Itinerary { repeated Leg legs = 1; }

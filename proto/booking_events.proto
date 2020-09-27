@@ -4,12 +4,22 @@ package booking;
 
 option go_package = "booking/pb";
 
+import "google/protobuf/timestamp.proto";
+import "itinerary.proto";
+
 message NewCargoBooked {
   string tracking_id = 1;
   string origin = 2;
   string destination = 3;
+  google.protobuf.Timestamp arrival_deadline = 4;
 }
 
-message CargoRouteAssigned {}
+message CargoToRouteAssigned {
+  string tracking_id = 1;
+  Itinerary itinerary = 2;
+}
 
-message CargoDestinationChanged {}
+message CargoDestinationChanged {
+  string tracking_id = 1;
+  string destination = 2;
+}
