@@ -12,6 +12,7 @@ import (
 	"google.golang.org/grpc"
 )
 
+// Environment variables
 const (
 	PORT       = ":5052"
 	RABBIT_URI = "amqp://guest:guest@localhost:5672/"
@@ -19,16 +20,19 @@ const (
 
 func main() {
 	var (
-		port       = envString("PORT", PORT)
-		rabbit_uri = envString("RABBIT_URI", RABBIT_URI)
+		port      = envString("PORT", PORT)
+		rabbitURI = envString("RABBIT_URI", RABBIT_URI)
 	)
 
 	cargos := infrastructure.NewCargoViewModelRepository()
 	newCargoEH := application.NewCargoBookedEventHandler(cargos)
+	destChangedEH := application.NewCargoDestinationChangedEventHandler(cargos)
 
-	eventBus, err := infrastructure.NewEventBus(rabbit_uri)
+	eventBus, err := infrastructure.NewEventBus(rabbitURI)
 	checkErr(err)
 	err = eventBus.Subscribe(&booking.NewCargoBooked{}, newCargoEH)
+	checkErr(err)
+	err = eventBus.Subscribe(&booking.CargoDestinationChanged{}, destChangedEH)
 	checkErr(err)
 
 	trackingSvc := application.NewService(cargos)

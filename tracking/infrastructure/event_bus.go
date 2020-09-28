@@ -59,8 +59,9 @@ func NewEventBus(uri string) (EventBus, error) {
 }
 
 func (eb *eventBus) Subscribe(event proto.Message, eventHandler application.EventHandler) error {
+	// TODO: routingKey = proto.Message
 	routingKey := strings.Split(reflect.TypeOf(&event).String(), ".")[1]
-
+	fmt.Printf("Routing key: %s\n", routingKey)
 	if err := eb.QueueBind(
 		eb.queueName, // queue name
 		routingKey,   // routing key
@@ -89,9 +90,13 @@ func (eb *eventBus) Subscribe(event proto.Message, eventHandler application.Even
 
 			if err := proto.Unmarshal(d.Body, message.(proto.Message)); err != nil {
 				// log
-				fmt.Println(err)
-			} else {
-				eventHandler.Handle(message.(proto.Message))
+				fmt.Printf("Unmarshal err: %v\n%v\n", err, d.Body)
+				continue
+			}
+
+			if err := eventHandler.Handle(message.(proto.Message)); err != nil {
+				// log
+				fmt.Printf("EventHandler err: %v\n", err)
 			}
 		}
 	}()

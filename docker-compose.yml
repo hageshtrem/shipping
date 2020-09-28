@@ -8,6 +8,8 @@ services:
       PORT: ":50051"
   rabbitmq:
     image: "rabbitmq:3-management"
+    ports:
+      - "5672:5672"
   booking:
     build: ./booking
     restart: always
