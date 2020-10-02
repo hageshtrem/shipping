@@ -23,9 +23,10 @@ func (eh *newCargoBookedEventHandler) Handle(event proto.Message) error {
 	newCargo := event.(*booking.NewCargoBooked)
 	log.Printf("New Cargo booked: %v", newCargo)
 	cargo := Cargo{
-		TrackingID:  newCargo.TrackingId,
-		Origin:      newCargo.Origin,
-		Destination: newCargo.Destination,
+		TrackingID:      newCargo.TrackingId,
+		Origin:          newCargo.Origin,
+		Destination:     newCargo.Destination,
+		ArrivalDeadline: newCargo.ArrivalDeadline.AsTime(),
 	}
 	return eh.cargos.Store(&cargo)
 }

@@ -32,13 +32,13 @@ func NewEventBus(uri string) (EventBus, error) {
 	}
 
 	if err := channel.ExchangeDeclare(
-		"booking", // name TODO: change to shipping
-		"fanout",  // type TODO: change to direct
-		true,      // durable
-		false,     // auto-deleted
-		false,     // internal
-		false,     // no-wait
-		nil,       // arguments
+		"shipping", // name
+		"direct",   // type
+		true,       // durable
+		false,      // auto-deleted
+		false,      // internal
+		false,      // no-wait
+		nil,        // arguments
 	); err != nil {
 		return nil, err
 	}
@@ -59,13 +59,12 @@ func NewEventBus(uri string) (EventBus, error) {
 }
 
 func (eb *eventBus) Subscribe(event proto.Message, eventHandler application.EventHandler) error {
-	// TODO: routingKey = proto.Message
-	routingKey := strings.Split(reflect.TypeOf(&event).String(), ".")[1]
+	routingKey := strings.Split(reflect.TypeOf(event).String(), ".")[1]
 	fmt.Printf("Routing key: %s\n", routingKey)
 	if err := eb.QueueBind(
 		eb.queueName, // queue name
 		routingKey,   // routing key
-		"booking",    // exchange // TODO: change to shipping
+		"shipping",   // exchange
 		false,
 		nil); err != nil {
 		return err

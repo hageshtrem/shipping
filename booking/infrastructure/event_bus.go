@@ -3,6 +3,8 @@ package infrastructure
 import (
 	"booking/application"
 	"fmt"
+	"reflect"
+	"strings"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/streadway/amqp"
@@ -25,13 +27,13 @@ func NewEventBus(uri string) (application.EventBus, error) {
 	}
 
 	if err := channel.ExchangeDeclare(
-		"booking", // name
-		"fanout",  // type
-		true,      // durable
-		false,     // auto-deleted
-		false,     // internal
-		false,     // no-wait
-		nil,       // arguments
+		"shipping", // name
+		"direct",   // type
+		true,       // durable
+		false,      // auto-deleted
+		false,      // internal
+		false,      // no-wait
+		nil,        // arguments
 	); err != nil {
 		return nil, err
 	}
@@ -40,19 +42,20 @@ func NewEventBus(uri string) (application.EventBus, error) {
 }
 
 func (eb *eventBus) Publish(message proto.Message) error {
+	routingKey := strings.Split(reflect.TypeOf(message).String(), ".")[1]
 	messageContent, err := proto.Marshal(message)
 	if err != nil {
 		return err
 	}
 
 	if err := eb.Channel.Publish(
-		"booking", // publish to an exchange
-		"",        // routing to 0 or more queues
-		false,     // mandatory
-		false,     // immediate
+		"shipping", // publish to an exchange
+		routingKey, // routing to 0 or more queues
+		false,      // mandatory
+		false,      // immediate
 		amqp.Publishing{
 			// Headers:   amqp.Table{},
-			ContentType:  "application/x-protobuf; proto=booking", // TODO: change when standardized
+			ContentType:  "application/x-protobuf; proto=" + routingKey, // TODO: change when standardized
 			Body:         messageContent,
 			DeliveryMode: amqp.Transient, // 1=non-persistent, 2=persistent
 			Priority:     0,              // 0-9

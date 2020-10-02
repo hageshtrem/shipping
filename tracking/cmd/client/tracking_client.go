@@ -11,6 +11,7 @@ import (
 	"google.golang.org/grpc"
 )
 
+const timeFormat = "02.01.2006"
 const address = "localhost:5052"
 
 func main() {
@@ -29,7 +30,16 @@ func main() {
 
 	cargo, err := client.Track(ctx, &pb.TrackingID{Id: os.Args[1]})
 	checkErr(err)
-	fmt.Printf("%v", cargo)
+
+	fmt.Printf("TrackingID: %s\nStatus: %s\nOrigin: %s\nDestination: %s\nETA: %s\nNext expected activity: %s\nArrival deadline: %s\n",
+		cargo.GetTrackingId(),
+		cargo.GetStatusText(),
+		cargo.GetOrigin(),
+		cargo.GetDestination(),
+		cargo.GetEta().AsTime().Format(timeFormat),
+		cargo.GetNextExpectedActivity(),
+		cargo.GetArrivalDeadline().AsTime().Format(timeFormat),
+	)
 }
 
 func checkErr(err error) {
