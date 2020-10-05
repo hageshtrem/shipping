@@ -3,6 +3,7 @@ module tracking
 go 1.15
 
 require (
+	github.com/codingconcepts/env v0.0.0-20200821220118-a8fbf8d84482
 	github.com/golang/protobuf v1.4.1
 	github.com/pborman/uuid v1.2.1
 	github.com/streadway/amqp v1.0.0

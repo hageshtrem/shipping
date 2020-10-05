@@ -58,8 +58,14 @@ func (es *eventService) CargoToRouteAssigned(c *domain.Cargo) error {
 		return err
 	}
 
+	pbEta, err := ptypes.TimestampProto(c.Delivery.ETA)
+	if err != nil {
+		return err
+	}
+
 	event := &pb.CargoToRouteAssigned{
 		TrackingId: string(c.TrackingID),
+		Eta:        pbEta,
 		Itinerary:  pbItinerary,
 	}
 

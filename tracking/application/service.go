@@ -4,6 +4,8 @@ import "errors"
 
 // ErrInvalidArgument is returned when one or more arguments are invalid.
 var ErrInvalidArgument = errors.New("invalid argument")
+
+// ErrUnknownCargo is used when a cargo could not be found.
 var ErrUnknownCargo = errors.New("unknown cargo")
 
 // Service is the interface that provides the basic Track method.
@@ -27,6 +29,7 @@ func (s *service) Track(id string) (Cargo, error) {
 	return *c, nil
 }
 
+// NewService returns a new instance of the default Service.
 func NewService(cargos CargoViewModelRepository) Service {
 	return &service{cargos}
 }

@@ -15,6 +15,7 @@ type grpcServer struct {
 	pb.UnimplementedTrackingServiceServer
 }
 
+// NewServer creates a GRPC server.
 func NewServer(s Service) pb.TrackingServiceServer {
 	return &grpcServer{s, pb.UnimplementedTrackingServiceServer{}}
 }

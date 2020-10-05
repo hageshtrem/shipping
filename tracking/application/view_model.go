@@ -17,11 +17,13 @@ type Cargo struct {
 	Events               []Event
 }
 
+// Event is a read model for tracking views.
 type Event struct {
 	Description string
 	Expected    bool
 }
 
+// CargoViewModelRepository provides access a cargo view model store.
 type CargoViewModelRepository interface {
 	Store(cargo *Cargo) error
 	Find(id string) (*Cargo, error)
