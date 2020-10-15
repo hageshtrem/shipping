@@ -4,6 +4,8 @@ import (
 	"log"
 	"net"
 	"os"
+	"os/signal"
+	"syscall"
 	"tracking/application"
 	"tracking/infrastructure"
 	"tracking/pb"
@@ -27,8 +29,13 @@ func main() {
 	destChangedEH := application.NewCargoDestinationChangedEventHandler(cargos)
 	routeAssignedEH := application.NewCargoToRouteAssignedEventHandler(cargos)
 
+	errChan := make(chan error)
+
 	eventBus, err := infrastructure.NewEventBus(envCfg.RabbitURI)
 	checkErr(err)
+	defer eventBus.Close()
+	eventBus.NotifyError(errChan)
+
 	checkErr(eventBus.Subscribe(&booking.NewCargoBooked{}, newCargoEH))
 	checkErr(eventBus.Subscribe(&booking.CargoDestinationChanged{}, destChangedEH))
 	checkErr(eventBus.Subscribe(&booking.CargoToRouteAssigned{}, routeAssignedEH))
@@ -40,20 +47,25 @@ func main() {
 
 	s := application.NewServer(trackingSvc)
 	gs := grpc.NewServer()
+	defer gs.GracefulStop()
 
 	pb.RegisterTrackingServiceServer(gs, s)
 	log.Printf("Service started at %s", envCfg.Port)
-	if err := gs.Serve(lis); err != nil {
-		log.Fatalf("failed to serve: %v", err)
-	}
-}
+	go func() {
+		if err := gs.Serve(lis); err != nil {
+			errChan <- err
+		}
+	}()
 
-func envString(env, fallback string) string {
-	e := os.Getenv(env)
-	if e == "" {
-		return fallback
+	sig := make(chan os.Signal, 1)
+	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
+
+	select {
+	case s := <-sig:
+		log.Printf("Received %v signal, shutting down...", s)
+	case err := <-errChan:
+		log.Fatal(err)
 	}
-	return e
 }
 
 func checkErr(err error) {

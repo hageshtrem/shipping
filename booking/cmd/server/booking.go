@@ -4,7 +4,10 @@ import (
 	"log"
 	"net"
 	"os"
+	"os/signal"
+	"syscall"
 
+	"github.com/codingconcepts/env"
 	"google.golang.org/grpc"
 
 	app "booking/application"
@@ -12,48 +15,52 @@ import (
 	"booking/pb"
 )
 
-const (
-	PORT         = ":5051"
-	ROUTING_ADDR = "localhost:50051"
-	RABBIT_URI   = "amqp://guest:guest@localhost:5672/"
-)
+type envConfig struct {
+	Port        string `env:"PORT" default:":5051"`
+	RoutingAddr string `env:"ROUTING_ADDR" default:"localhost:50051"`
+	RabbitURI   string `env:"RABBIT_URI" default:"amqp://guest:guest@localhost:5672/"`
+}
 
 func main() {
-	var (
-		port        = envString("PORT", PORT)
-		routingAddr = envString("ROUTING_ADDR", ROUTING_ADDR)
-		rabbit_uri  = envString("RABBIT_URI", RABBIT_URI)
-	)
+	envCfg := envConfig{}
+	checkErr(env.Set(&envCfg))
 
-	routingSvc, err := infra.NewRoutingService(routingAddr)
+	routingSvc, err := infra.NewRoutingService(envCfg.RoutingAddr)
 	checkErr(err)
 	cargos := infra.NewCargoRepository()
 	locations := infra.NewLocationRepository()
-	eventBus, err := infra.NewEventBus(rabbit_uri)
+	eventBus, err := infra.NewEventBus(envCfg.RabbitURI)
 	checkErr(err)
+	defer eventBus.Close()
 	eventService := app.NewEventService(eventBus)
 
 	bookingSvc := app.NewService(cargos, locations, routingSvc, eventService)
 
-	lis, err := net.Listen("tcp", port)
+	lis, err := net.Listen("tcp", envCfg.Port)
 	checkErr(err)
 
 	s := app.NewServer(bookingSvc)
-
 	gs := grpc.NewServer()
+	defer gs.GracefulStop()
 
 	pb.RegisterBookingServiceServer(gs, s)
-	if err := gs.Serve(lis); err != nil {
-		log.Fatalf("failed to serve: %v", err)
-	}
-}
+	errChan := make(chan error)
+	log.Printf("Service started at %s", envCfg.Port)
+	go func() {
+		if err := gs.Serve(lis); err != nil {
+			errChan <- err
+		}
+	}()
 
-func envString(env, fallback string) string {
-	e := os.Getenv(env)
-	if e == "" {
-		return fallback
+	sig := make(chan os.Signal, 1)
+	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
+
+	select {
+	case s := <-sig:
+		log.Printf("Received %v signal, shutting down...", s)
+	case err := <-errChan:
+		log.Fatal(err)
 	}
-	return e
 }
 
 func checkErr(err error) {
