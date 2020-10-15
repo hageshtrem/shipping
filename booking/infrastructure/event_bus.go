@@ -6,17 +6,23 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/golang/protobuf/proto"
+	"github.com/isayme/go-amqp-reconnect/rabbitmq"
 	"github.com/streadway/amqp"
+	"google.golang.org/protobuf/proto"
+)
+
+const (
+	exchangeName = "shipping"
 )
 
 type eventBus struct {
-	*amqp.Connection
-	*amqp.Channel
+	*rabbitmq.Connection
+	*rabbitmq.Channel
 }
 
+// NewEventBus returns an implementation of application.EventBus.
 func NewEventBus(uri string) (application.EventBus, error) {
-	conn, err := amqp.Dial(uri)
+	conn, err := rabbitmq.Dial(uri)
 	if err != nil {
 		return nil, err
 	}
@@ -27,13 +33,13 @@ func NewEventBus(uri string) (application.EventBus, error) {
 	}
 
 	if err := channel.ExchangeDeclare(
-		"shipping", // name
-		"direct",   // type
-		true,       // durable
-		false,      // auto-deleted
-		false,      // internal
-		false,      // no-wait
-		nil,        // arguments
+		exchangeName,        // name
+		amqp.ExchangeDirect, // type
+		true,                // durable
+		false,               // auto-deleted
+		false,               // internal
+		false,               // no-wait
+		nil,                 // arguments
 	); err != nil {
 		return nil, err
 	}
@@ -49,16 +55,16 @@ func (eb *eventBus) Publish(message proto.Message) error {
 	}
 
 	if err := eb.Channel.Publish(
-		"shipping", // publish to an exchange
-		routingKey, // routing to 0 or more queues
-		false,      // mandatory
-		false,      // immediate
+		exchangeName, // publish to an exchange
+		routingKey,   // routing to 0 or more queues
+		false,        // mandatory
+		false,        // immediate
 		amqp.Publishing{
-			// Headers:   amqp.Table{},
-			ContentType:  "application/x-protobuf; proto=" + routingKey, // TODO: change when standardized
+			ContentType:  "application/x-protobuf", // TODO: change when standardized
+			Type:         routingKey,
 			Body:         messageContent,
-			DeliveryMode: amqp.Transient, // 1=non-persistent, 2=persistent
-			Priority:     0,              // 0-9
+			DeliveryMode: amqp.Persistent,
+			Priority:     0, // 0-9
 		},
 	); err != nil {
 		return fmt.Errorf("Exchange Publish: %s", err)
@@ -67,6 +73,7 @@ func (eb *eventBus) Publish(message proto.Message) error {
 	return nil
 }
 
+// Close closes connection.
 func (eb *eventBus) Close() {
 	eb.Channel.Close()
 	eb.Connection.Close()

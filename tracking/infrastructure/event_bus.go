@@ -1,27 +1,99 @@
 package infrastructure
 
 import (
-	"fmt"
+	"log"
 	"reflect"
 	"strings"
+	"sync"
 	"tracking/application"
 
+	"github.com/isayme/go-amqp-reconnect/rabbitmq"
 	"github.com/streadway/amqp"
 	"google.golang.org/protobuf/proto"
 )
 
+const (
+	exchangeName = "shipping"
+	queueName    = "tracking.queue"
+)
+
+// EventBus provides the ability to subscribe to an event.
 type EventBus interface {
+	// Subscribe registers a handler for specific type of event.
 	Subscribe(event proto.Message, eventHandler application.EventHandler) error
+	// NotifyError registers a channel to handle runtime errors.
+	NotifyError(errChan chan<- error)
+	// Close closes connection.
+	Close()
+}
+
+type handlerFunc func(body []byte) error
+
+type consumer struct {
+	handlersSync sync.RWMutex
+	handlers     map[string]handlerFunc
+	errChan      chan<- error
+	enough       chan struct{}
+}
+
+func (con *consumer) process(msgs <-chan amqp.Delivery) {
+	go func() {
+		for {
+			select {
+			case d, ok := <-msgs:
+				if !ok {
+					break
+				}
+
+				con.handlersSync.Lock()
+				h, ok := con.handlers[d.Type]
+				con.handlersSync.Unlock()
+				if !ok {
+					// There is no handler registered for the received message yet.
+					// So just return the message to the queue.
+					log.Printf("No handler for received message: %s", d.Type)
+					_ = d.Nack(false, true)
+					continue
+				}
+
+				if err := h(d.Body); err != nil {
+					_ = d.Nack(false, true)
+					con.processErr(err)
+				}
+
+				if err := d.Ack(false); err != nil {
+					con.processErr(err)
+				}
+			case <-con.enough:
+				break
+			}
+		}
+	}()
+}
+
+func (con *consumer) addHandler(msgType string, handler handlerFunc) {
+	con.handlersSync.Lock()
+	defer con.handlersSync.Unlock()
+	con.handlers[msgType] = handler
+}
+
+func (con *consumer) processErr(err error) {
+	if con.errChan == nil {
+		panic(err)
+	}
+
+	con.errChan <- err
 }
 
 type eventBus struct {
-	*amqp.Connection
-	*amqp.Channel
-	queueName string
+	*rabbitmq.Connection
+	*rabbitmq.Channel
+	consumer *consumer
 }
 
+// NewEventBus creates a new event bus.
 func NewEventBus(uri string) (EventBus, error) {
-	conn, err := amqp.Dial(uri)
+	conn, err := rabbitmq.Dial(uri)
 	if err != nil {
 		return nil, err
 	}
@@ -32,73 +104,100 @@ func NewEventBus(uri string) (EventBus, error) {
 	}
 
 	if err := channel.ExchangeDeclare(
-		"shipping", // name
-		"direct",   // type
-		true,       // durable
-		false,      // auto-deleted
-		false,      // internal
-		false,      // no-wait
-		nil,        // arguments
+		exchangeName,        // name
+		amqp.ExchangeDirect, // type
+		true,                // durable
+		false,               // auto-deleted
+		false,               // internal
+		false,               // no-wait
+		nil,                 // arguments
 	); err != nil {
 		return nil, err
 	}
 
-	q, err := channel.QueueDeclare(
-		"",    // name
-		false, // durable
-		false, // delete when unused
-		true,  // exclusive
-		false, // no-wait
-		nil,   // arguments
+	_, err = channel.QueueDeclare(
+		queueName, // name
+		true,      // durable
+		false,     // delete when unused
+		false,     // exclusive
+		false,     // no-wait
+		nil,       // arguments
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	return &eventBus{conn, channel, q.Name}, nil
+	if err := channel.Qos(
+		1,     // prefetch count
+		0,     // prefetch size
+		false, // global
+	); err != nil {
+		return nil, err
+	}
+
+	msgs, err := channel.Consume(
+		queueName, // queue
+		"",        // consumer
+		false,     // auto ack
+		false,     // exclusive
+		false,     // no local
+		false,     // no wait
+		nil,       // args
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	consumer := consumer{
+		handlersSync: sync.RWMutex{},
+		handlers:     make(map[string]handlerFunc),
+		errChan:      nil,
+		enough:       make(chan struct{}),
+	}
+	consumer.process(msgs)
+
+	return &eventBus{conn, channel, &consumer}, nil
 }
 
 func (eb *eventBus) Subscribe(event proto.Message, eventHandler application.EventHandler) error {
 	routingKey := strings.Split(reflect.TypeOf(event).String(), ".")[1]
-	fmt.Printf("Routing key: %s\n", routingKey)
+
 	if err := eb.QueueBind(
-		eb.queueName, // queue name
+		queueName,    // queue name
 		routingKey,   // routing key
-		"shipping",   // exchange
+		exchangeName, // exchange
 		false,
 		nil); err != nil {
 		return err
 	}
 
-	msgs, err := eb.Consume(
-		eb.queueName, // queue
-		"",           // consumer
-		true,         // auto ack
-		false,        // exclusive
-		false,        // no local
-		false,        // no wait
-		nil,          // args
-	)
-	if err != nil {
-		return err
-	}
+	eb.consumer.addHandler(routingKey, func(body []byte) error {
+		message := reflect.ValueOf(event).Interface()
 
-	go func() {
-		for d := range msgs {
-			message := reflect.ValueOf(event).Interface()
-
-			if err := proto.Unmarshal(d.Body, message.(proto.Message)); err != nil {
-				// log
-				fmt.Printf("Unmarshal err: %v\n%v\n", err, d.Body)
-				continue
-			}
-
-			if err := eventHandler.Handle(message.(proto.Message)); err != nil {
-				// log
-				fmt.Printf("EventHandler err: %v\n", err)
-			}
+		unmarshalOptions := proto.UnmarshalOptions{
+			DiscardUnknown: true,
+			AllowPartial:   true,
 		}
-	}()
+		if err := unmarshalOptions.Unmarshal(body, message.(proto.Message)); err != nil {
+			return err
+		}
+
+		if err := eventHandler.Handle(message.(proto.Message)); err != nil {
+			return err
+		}
+
+		return nil
+	})
 
 	return nil
+}
+
+func (eb *eventBus) NotifyError(errChan chan<- error) {
+	eb.consumer.errChan = errChan
+}
+
+func (eb *eventBus) Close() {
+	eb.consumer.enough <- struct{}{}
+	eb.Channel.Close()
+	eb.Connection.Close()
 }

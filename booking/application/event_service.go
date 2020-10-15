@@ -5,12 +5,12 @@ import (
 	"booking/pb"
 
 	"github.com/golang/protobuf/ptypes"
-	// "google.golang.org/protobuf/proto"
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 )
 
 type EventBus interface {
 	Publish(proto.Message) error
+	Close()
 }
 
 type EventService interface {
