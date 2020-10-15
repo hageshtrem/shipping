@@ -1,3 +1,6 @@
+// The types described here represent the format of messages used in the
+// Shipping system. The name of the used RabbitMQ exchange is "shipping".
+
 syntax = "proto3";
 
 package booking;

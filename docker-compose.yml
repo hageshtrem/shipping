@@ -15,9 +15,20 @@ services:
     restart: always
     depends_on:
       - pathfinder
+      - rabbitmq
     ports:
       - "5051:5051"
     environment:
       PORT: ":5051"
       ROUTING_ADDR: "pathfinder:50051"
+      RABBIT_URI: "amqp://guest:guest@rabbitmq:5672/"
+  tracking:
+    build: ./tracking
+    restart: always
+    depends_on:
+      - rabbitmq
+    ports:
+     - "5052:5052"
+    environment:
+      PORT: ":5052"
       RABBIT_URI: "amqp://guest:guest@rabbitmq:5672/"
