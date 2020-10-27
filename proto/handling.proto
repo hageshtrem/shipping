@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package handling;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+service HandlingService {
+  rpc RegisterHandlingEvent(RegisterHandlingEventRequest)
+      returns (google.protobuf.Empty) {}
+}
+
+message RegisterHandlingEventRequest {
+  google.protobuf.Timestamp completed = 1;
+  string id = 2;
+  string voyage_number = 3;
+  string un_locode = 4;
+  HandlingEventType event_type = 5;
+}
+
+enum HandlingEventType {
+  NotHandled = 0;
+  Load = 1;
+  Unload = 2;
+  Receive = 3;
+  Claim = 4;
+  Customs = 5;
+}

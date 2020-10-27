@@ -11,7 +11,7 @@ import "itinerary.proto";
 service BookingService {
   rpc BookNewCargo(BookNewCargoRequest) returns (BookNewCargoResponse) {}
   rpc RequestPossibleRoutesForCargo(RequestPossibleRoutesForCargoRequest)
-      returns (stream Itinerary) {}
+      returns (stream itinerary.Itinerary) {}
   rpc AssignCargoToRoute(AssignCargoToRouteRequest)
       returns (google.protobuf.Empty) {}
   rpc ChangeDestination(ChangeDestinationRequest)
@@ -33,7 +33,7 @@ message RequestPossibleRoutesForCargoRequest { string tracking_id = 1; }
 
 message AssignCargoToRouteRequest {
   string tracking_id = 1;
-  Itinerary itinerary = 2;
+  itinerary.Itinerary itinerary = 2;
 }
 
 message ChangeDestinationRequest {
@@ -54,7 +54,7 @@ message LoadCargoRequest { string tracking_id = 1; }
 message Cargo {
   google.protobuf.Timestamp arrival_deadline = 1;
   string destination = 2;
-  repeated Leg legs = 3;
+  repeated itinerary.Leg legs = 3;
   bool misrouted = 4;
   string origin = 5;
   bool routed = 6;

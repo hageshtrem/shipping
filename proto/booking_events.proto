@@ -19,7 +19,7 @@ message NewCargoBooked {
 
 message CargoToRouteAssigned {
   string tracking_id = 1;
-  Itinerary itinerary = 2;
+  itinerary.Itinerary itinerary = 2;
   google.protobuf.Timestamp eta = 3;
 }
 
