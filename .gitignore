@@ -1,3 +1,5 @@
+.vscode/*
 booking/pb/*
 pathfinder/pb/*
 tracking/pb/*
+handling/target/*
