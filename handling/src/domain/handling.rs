@@ -1,4 +1,6 @@
 #![allow(dead_code)]
+use super::location::{Location, UNLocode};
+use super::{Repository, Result};
 use chrono::prelude::*;
 
 #[derive(Debug)]
@@ -31,7 +33,7 @@ pub trait HandlingEventFactory {
         voyage_number: VoyageNumber,
         un_locode: UNLocode,
         event_type: HandlingEventType,
-    ) -> Result<HandlingEvent, Box<dyn std::error::Error>>;
+    ) -> Result<HandlingEvent>;
 }
 
 pub struct HandlingEventFactoryImpl<'a, C, V, L> {
@@ -68,7 +70,7 @@ where
         voyage_number: VoyageNumber,
         un_locode: UNLocode,
         event_type: HandlingEventType,
-    ) -> Result<HandlingEvent, Box<dyn std::error::Error>> {
+    ) -> Result<HandlingEvent> {
         self.cargo_repository.find(id.clone())?;
         // When creating a Receive event, the voyage number is not known.
         if !voyage_number.is_empty() {
@@ -89,14 +91,6 @@ where
 
 pub type TrackingID = String;
 pub type VoyageNumber = String;
-pub type UNLocode = String;
 
 pub struct Cargo {}
 pub struct Voyage {}
-pub struct Location {}
-
-pub trait Repository<K, V> {
-    fn store(&self, e: &V) -> Result<(), Box<dyn std::error::Error>>;
-    fn find(&self, id: K) -> Result<V, Box<dyn std::error::Error>>;
-    fn find_all(&self) -> Vec<V>;
-}
