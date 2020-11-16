@@ -3,7 +3,7 @@ use super::location::{Location, UNLocode};
 use super::{Repository, Result};
 use chrono::prelude::*;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum HandlingEventType {
     NotHandled,
     Load,
@@ -13,12 +13,14 @@ pub enum HandlingEventType {
     Customs,
 }
 
+#[derive(Clone)]
 pub struct HandlingActivity {
     r#type: HandlingEventType,
     location: UNLocode,
     voyage_number: VoyageNumber,
 }
 
+#[derive(Clone)]
 pub struct HandlingEvent {
     tracking_id: TrackingID,
     activity: HandlingActivity,
@@ -92,5 +94,7 @@ where
 pub type TrackingID = String;
 pub type VoyageNumber = String;
 
+#[derive(Clone)]
 pub struct Cargo {}
+#[derive(Clone)]
 pub struct Voyage {}
