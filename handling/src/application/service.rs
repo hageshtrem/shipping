@@ -74,3 +74,11 @@ where
 pub trait EventHandler {
     fn cargo_was_handled(&self, e: HandlingEvent);
 }
+
+pub struct EventHandlerImpl;
+
+impl EventHandler for EventHandlerImpl {
+    fn cargo_was_handled(&self, _e: HandlingEvent) {
+        println!("Cargo was handled")
+    }
+}

@@ -8,7 +8,7 @@ pub type Result<T> = StdResult<T, Box<dyn std::error::Error>>;
 
 pub trait Repository<K, V>
 where
-    K: Eq + Hash,
+    K: Eq + Hash + std::fmt::Display,
     V: Clone,
 {
     fn store(&self, id: K, v: &V) -> Result<()>;

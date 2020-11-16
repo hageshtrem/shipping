@@ -15,7 +15,7 @@ impl<K, V> InmemRepository<K, V> {
 
 impl<K, V> Repository<K, V> for InmemRepository<K, V>
 where
-    K: Eq + Hash,
+    K: Eq + Hash + fmt::Display,
     V: Clone,
 {
     fn store(&self, key: K, value: &V) -> Result<()> {
@@ -30,7 +30,7 @@ where
         let data = r.lock().unwrap();
         match data.deref().get(&key) {
             Some(value) => Ok(value.clone()),
-            None => Err(Box::new(ErrNotFound)),
+            None => Err(Box::new(ErrNotFound(key.to_string()))),
         }
     }
 
@@ -43,7 +43,7 @@ where
 }
 
 #[derive(Debug)]
-pub struct ErrNotFound;
+pub struct ErrNotFound(String);
 
 impl Error for ErrNotFound {}
 
