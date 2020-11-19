@@ -38,18 +38,14 @@ pub trait HandlingEventFactory {
     ) -> Result<HandlingEvent>;
 }
 
-pub struct HandlingEventFactoryImpl<'a, C, V, L> {
-    cargo_repository: &'a C,
-    voyage_repository: &'a V,
-    location_repository: &'a L,
+pub struct HandlingEventFactoryImpl<C, V, L> {
+    cargo_repository: C,
+    voyage_repository: V,
+    location_repository: L,
 }
 
-impl<'a, C, V, L> HandlingEventFactoryImpl<'a, C, V, L> {
-    pub fn new(
-        cargo_repository: &'a C,
-        voyage_repository: &'a V,
-        location_repository: &'a L,
-    ) -> Self {
+impl<C, V, L> HandlingEventFactoryImpl<C, V, L> {
+    pub fn new(cargo_repository: C, voyage_repository: V, location_repository: L) -> Self {
         HandlingEventFactoryImpl {
             cargo_repository,
             voyage_repository,
@@ -58,11 +54,11 @@ impl<'a, C, V, L> HandlingEventFactoryImpl<'a, C, V, L> {
     }
 }
 
-impl<'a, C, V, L> HandlingEventFactory for HandlingEventFactoryImpl<'a, C, V, L>
+impl<C, V, L> HandlingEventFactory for HandlingEventFactoryImpl<C, V, L>
 where
-    C: Repository<TrackingID, Cargo> + 'a,
-    V: Repository<VoyageNumber, Voyage> + 'a,
-    L: Repository<UNLocode, Location> + 'a,
+    C: Repository<TrackingID, Cargo>,
+    V: Repository<VoyageNumber, Voyage>,
+    L: Repository<UNLocode, Location>,
 {
     fn create_handling_event(
         &self,

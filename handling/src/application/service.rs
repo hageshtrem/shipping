@@ -6,32 +6,33 @@ use crate::domain::location::UNLocode;
 use crate::domain::{Repository, Result};
 use chrono::prelude::*;
 
-// pub trait Service {
-//     fn register_handling_event(
-//         &self,
-//         id: TrackingID,
-//         voyage_number: VoyageNumber,
-//         un_locode: UNLocode,
-//         event_type: HandlingEventType,
-//     ) -> Result<(), Box<dyn std::error::Error>>;
-// }
-
-pub struct ServiceImpl<'a, R, F, H> {
-    handling_event_repository: &'a R,
-    handling_event_factory: &'a F,
-    event_handler: &'a H,
+pub trait Service {
+    fn register_handling_event(
+        &self,
+        completed: DateTime<Utc>,
+        id: TrackingID,
+        voyage_number: VoyageNumber,
+        un_locode: UNLocode,
+        event_type: HandlingEventType,
+    ) -> Result<()>;
 }
 
-impl<'a, R, F, H> ServiceImpl<'a, R, F, H>
+pub struct ServiceImpl<R, F, H> {
+    handling_event_repository: R,
+    handling_event_factory: F,
+    event_handler: H,
+}
+
+impl<R, F, H> ServiceImpl<R, F, H>
 where
-    R: Repository<TrackingID, HandlingEvent> + 'a,
-    F: HandlingEventFactory + 'a,
-    H: EventHandler + 'a,
+    R: Repository<TrackingID, HandlingEvent>,
+    F: HandlingEventFactory,
+    H: EventHandler,
 {
     pub fn new_service(
-        handling_event_repository: &'a R,
-        handling_event_factory: &'a F,
-        event_handler: &'a H,
+        handling_event_repository: R,
+        handling_event_factory: F,
+        event_handler: H,
     ) -> Self {
         ServiceImpl {
             handling_event_repository,
@@ -39,7 +40,15 @@ where
             event_handler,
         }
     }
-    pub fn register_handling_event(
+}
+
+impl<R, F, H> Service for ServiceImpl<R, F, H>
+where
+    R: Repository<TrackingID, HandlingEvent>,
+    F: HandlingEventFactory,
+    H: EventHandler,
+{
+    fn register_handling_event(
         &self,
         completed: DateTime<Utc>,
         id: TrackingID,

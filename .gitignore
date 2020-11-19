@@ -3,3 +3,4 @@ booking/pb/*
 pathfinder/pb/*
 tracking/pb/*
 handling/target/*
+handling/Cargo.lock
