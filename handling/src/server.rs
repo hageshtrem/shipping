@@ -1,4 +1,5 @@
-use handling::application::grpc_server::{HandlingServiceImpl, HandlingServiceServer};
+use handling::application::grpc_server::HandlingServiceImpl;
+use handling::application::pb::HandlingServiceServer;
 use handling::application::service::{EventHandlerImpl, ServiceImpl};
 use handling::domain::handling::HandlingEventFactoryImpl;
 use handling::domain::{location, Result};

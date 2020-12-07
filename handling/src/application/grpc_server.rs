@@ -1,16 +1,12 @@
 use super::service::Service;
-use crate::domain::handling::{HandlingEventType, TrackingID, VoyageNumber};
+use crate::domain::handling::{TrackingID, VoyageNumber};
 use crate::domain::location::UNLocode;
 use chrono::prelude::*;
-use std::convert::TryFrom;
+use std::convert::{TryFrom, TryInto};
 use std::time::SystemTime;
 use tonic::{Code, Request, Response, Status};
 
-pub use pb::handling_service_server::{HandlingService, HandlingServiceServer};
-
-pub mod pb {
-    tonic::include_proto!("handling"); // The string specified here must match the proto package name
-}
+use super::pb::{HandlingService, RegisterHandlingEventRequest};
 
 #[derive(Debug, Default)]
 pub struct HandlingServiceImpl<S: Service>(S);
@@ -25,7 +21,7 @@ impl<S: Service> HandlingServiceImpl<S> {
 impl<S: Service + Sync + Send + 'static> HandlingService for HandlingServiceImpl<S> {
     async fn register_handling_event(
         &self,
-        request: Request<pb::RegisterHandlingEventRequest>,
+        request: Request<RegisterHandlingEventRequest>,
     ) -> Result<Response<()>, Status> {
         let message = request.into_inner();
         let completed = match message.completed {
@@ -35,15 +31,11 @@ impl<S: Service + Sync + Send + 'static> HandlingService for HandlingServiceImpl
             }
             None => Utc::now(),
         };
-        let event_type = match message.event_type {
-            0 => HandlingEventType::NotHandled,
-            1 => HandlingEventType::Load,
-            2 => HandlingEventType::Unload,
-            3 => HandlingEventType::Receive,
-            4 => HandlingEventType::Claim,
-            5 => HandlingEventType::Customs,
-            _ => return Err(Status::new(Code::InvalidArgument, "event type is invalid")),
-        } as HandlingEventType;
+
+        let event_type = match message.event_type.try_into() {
+            Ok(etype) => etype,
+            Err(msg) => return Err(Status::new(Code::InvalidArgument, msg)),
+        };
 
         if let Err(error) = self.0.register_handling_event(
             completed,

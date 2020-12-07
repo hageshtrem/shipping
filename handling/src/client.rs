@@ -1,14 +1,11 @@
 use chrono::prelude::*;
+use handling::application::pb::{
+    HandlingEventType, HandlingServiceClient, RegisterHandlingEventRequest,
+};
 use handling::domain::Result;
-use pb::handling_service_client::HandlingServiceClient;
-use pb::RegisterHandlingEventRequest;
 use prost_types::Timestamp;
 use std::time::SystemTime;
 use structopt::StructOpt;
-
-mod pb {
-    tonic::include_proto!("handling");
-}
 
 #[derive(StructOpt, Debug)]
 /// Handling service client
@@ -31,7 +28,7 @@ struct Opt {
     location: String,
 
     #[structopt(long, short)]
-    event_type: pb::HandlingEventType,
+    event_type: HandlingEventType,
 }
 
 #[tokio::main]
@@ -60,31 +57,4 @@ async fn main() -> Result<()> {
     println!("{:#?}", resp);
 
     Ok(())
-}
-
-#[derive(Debug)]
-pub struct ParseError;
-
-impl std::error::Error for ParseError {}
-
-impl std::fmt::Display for ParseError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Parse error")
-    }
-}
-
-impl std::str::FromStr for pb::HandlingEventType {
-    type Err = ParseError;
-
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        match s {
-            "NotHandled" => Ok(Self::NotHandled),
-            "Load" => Ok(Self::Load),
-            "Unload" => Ok(Self::Unload),
-            "Receive" => Ok(Self::Receive),
-            "Claim" => Ok(Self::Claim),
-            "Customs" => Ok(Self::Customs),
-            _ => Err(Self::Err {}),
-        }
-    }
 }
