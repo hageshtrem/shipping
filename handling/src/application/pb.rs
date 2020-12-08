@@ -1,12 +1,24 @@
+use crate::domain::handling::Cargo;
 use crate::domain::handling::HandlingEventType as DomainHandlingEventType;
-pub use pb::handling_service_client::HandlingServiceClient;
-pub use pb::handling_service_server::{HandlingService, HandlingServiceServer};
-pub use pb::{HandlingEventType, RegisterHandlingEventRequest};
+use chrono::prelude::*;
+pub use pb::booking::NewCargoBooked;
+pub use pb::handling::handling_service_client::HandlingServiceClient;
+pub use pb::handling::handling_service_server::{HandlingService, HandlingServiceServer};
+pub use pb::handling::{HandlingEventType, RegisterHandlingEventRequest};
 use std::convert::{From, TryFrom};
 use std::str::FromStr;
+use std::time::SystemTime;
 
 mod pb {
-    tonic::include_proto!("handling"); // The string specified here must match the proto package name
+    pub mod handling {
+        tonic::include_proto!("handling"); // The string specified here must match the proto package name
+    }
+    pub mod booking {
+        tonic::include_proto!("booking");
+    }
+    pub mod itinerary {
+        tonic::include_proto!("itinerary");
+    }
 }
 
 #[derive(Debug)]
@@ -62,5 +74,36 @@ impl TryFrom<i32> for DomainHandlingEventType {
             6 => Ok(DomainHandlingEventType::Customs),
             _ => Err("Can't convert to HandlingEventType"),
         }
+    }
+}
+
+pub trait TypeName {
+    fn name() -> &'static str;
+}
+
+impl TypeName for NewCargoBooked {
+    fn name() -> &'static str {
+        "NewCargoBooked"
+    }
+}
+
+impl TryFrom<NewCargoBooked> for Cargo {
+    type Error = &'static str;
+
+    fn try_from(value: NewCargoBooked) -> Result<Self, Self::Error> {
+        let arrival_deadline = match value.arrival_deadline {
+            Some(prost_timestamp) => {
+                let sys_time = SystemTime::try_from(prost_timestamp).unwrap();
+                DateTime::<Utc>::from(sys_time)
+            }
+            None => Utc::now(), // TODO
+        };
+
+        Ok(Cargo {
+            tracking_id: value.tracking_id,
+            origin: value.origin,
+            destination: value.destination,
+            arrival_deadline: arrival_deadline,
+        })
     }
 }

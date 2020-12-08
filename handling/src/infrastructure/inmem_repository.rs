@@ -1,4 +1,5 @@
 use crate::domain::{Repository, Result};
+use std::clone::Clone;
 use std::collections::HashMap;
 use std::hash::Hash;
 use std::ops::{Deref, DerefMut};
@@ -39,6 +40,16 @@ where
         let data = r.lock().unwrap();
         let res = data.deref().values().map(|v| v.clone()).collect();
         Ok(res)
+    }
+}
+
+impl<K, V> Clone for InmemRepository<K, V>
+where
+    K: Eq + Hash + fmt::Display,
+    V: Clone,
+{
+    fn clone(&self) -> Self {
+        InmemRepository(self.0.clone())
     }
 }
 

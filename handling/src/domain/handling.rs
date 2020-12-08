@@ -91,6 +91,12 @@ pub type TrackingID = String;
 pub type VoyageNumber = String;
 
 #[derive(Clone)]
-pub struct Cargo {}
+pub struct Cargo {
+    pub tracking_id: TrackingID,
+    pub origin: UNLocode,
+    pub destination: UNLocode,
+    pub arrival_deadline: DateTime<Utc>,
+}
+
 #[derive(Clone)]
 pub struct Voyage {}
