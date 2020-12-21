@@ -14,11 +14,16 @@ path = "src/client.rs"
 
 [dependencies]
 chrono = "0.4"
+log = "0.4"
+lapin = "1.6"
+async-trait = "0.1"
+env_logger = "0.8"
+bytes = "0.5"
 structopt = "0.3"
 tonic = "0.3"
 prost = "0.6"
 prost-types = "0.6"
-tokio = { version = "0.2", features = ["macros"] }
+tokio = { version = "0.3", features = ["macros", "rt-multi-thread", "rt", "stream"] }
 
 [build-dependencies]
 tonic-build = "0.3"

@@ -2,7 +2,7 @@ use crate::application::pb::NewCargoBooked;
 use crate::domain::{handling::Cargo, handling::TrackingID, Repository};
 use std::convert::TryInto;
 
-pub trait EventHandler {
+pub trait EventHandler: Send {
     type Event;
     fn handle(&self, e: Self::Event);
 }
@@ -13,6 +13,8 @@ where
 {
     cargo_repository: T,
 }
+
+unsafe impl<T> Send for NewCargoBookedEventHandler<T> where T: Repository<TrackingID, Cargo> {}
 
 impl<T> NewCargoBookedEventHandler<T>
 where
