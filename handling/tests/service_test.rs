@@ -8,7 +8,17 @@ use handling::infrastructure::inmem_repository::InmemRepository;
 fn service() {
     // prerare dependencies
     let cargos = InmemRepository::new();
-    cargos.store("001".to_string(), &Cargo {}).unwrap();
+    cargos
+        .store(
+            "001".to_string(),
+            &Cargo {
+                tracking_id: "001".to_string(),
+                origin: "AUMEL".to_string(),
+                destination: "SESTO".to_string(),
+                arrival_deadline: Utc::now(),
+            },
+        )
+        .unwrap();
     let voyages = InmemRepository::new();
     voyages.store("v001".to_string(), &Voyage {}).unwrap();
     let locations = InmemRepository::new();

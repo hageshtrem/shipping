@@ -35,7 +35,10 @@ impl EventBus {
             .exchange_declare(
                 EXCHANGE_NAME,
                 ExchangeKind::Direct,
-                ExchangeDeclareOptions::default(),
+                ExchangeDeclareOptions {
+                    durable: true,
+                    ..ExchangeDeclareOptions::default()
+                },
                 FieldTable::default(),
             )
             .await?;

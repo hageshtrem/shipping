@@ -11,7 +11,7 @@ use structopt::StructOpt;
 /// Handling service client
 struct Opt {
     /// Binding address
-    #[structopt(long, env = "ADDR", default_value = "[::1]:50051")]
+    #[structopt(long, env = "ADDR", default_value = "[::1]:5053")]
     addr: String,
 
     #[structopt(long, short)]
