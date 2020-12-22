@@ -4,3 +4,4 @@ pathfinder/pb/*
 tracking/pb/*
 handling/target/*
 handling/Cargo.lock
+handling/proto/*

@@ -21,7 +21,7 @@ services:
     environment:
       PORT: ":5051"
       ROUTING_ADDR: "pathfinder:50051"
-      RABBIT_URI: "amqp://guest:guest@rabbitmq:5672/"
+      RABBIT_URI: "amqp://guest:guest@rabbitmq:5672/%2f"
   tracking:
     build: ./tracking
     restart: always
@@ -31,4 +31,14 @@ services:
      - "5052:5052"
     environment:
       PORT: ":5052"
-      RABBIT_URI: "amqp://guest:guest@rabbitmq:5672/"
+      RABBIT_URI: "amqp://guest:guest@rabbitmq:5672/%2f"
+  handling:
+    build: ./handling
+    restart: always
+    depends_on:
+      - rabbitmq
+    ports:
+      - "5053:5053"
+    environment:
+      ADDR: "0.0.0.0:5053"
+      RABBIT_URI: "amqp://guest:guest@rabbitmq:5672/%2f"
