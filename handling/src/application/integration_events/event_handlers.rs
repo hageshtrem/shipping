@@ -1,4 +1,4 @@
-use crate::application::pb::NewCargoBooked;
+use crate::application::pb::{CargoDestinationChanged, NewCargoBooked};
 use crate::domain::{handling::Cargo, handling::TrackingID, Repository};
 use log::info;
 use std::convert::TryInto;
@@ -44,6 +44,51 @@ where
 {
     fn clone(&self) -> Self {
         NewCargoBookedEventHandler {
+            cargo_repository: self.cargo_repository.clone(),
+        }
+    }
+}
+
+pub struct CargoDestinationChangedEventHandler<T>
+where
+    T: Repository<TrackingID, Cargo>,
+{
+    cargo_repository: T,
+}
+
+impl<T> CargoDestinationChangedEventHandler<T>
+where
+    T: Repository<TrackingID, Cargo>,
+{
+    pub fn new(cargo_repository: T) -> Self {
+        CargoDestinationChangedEventHandler { cargo_repository }
+    }
+}
+
+impl<T> EventHandler for CargoDestinationChangedEventHandler<T>
+where
+    T: Repository<TrackingID, Cargo>,
+{
+    type Event = CargoDestinationChanged;
+    fn handle(&self, e: Self::Event) {
+        info!(
+            "Cargo {} destination changed {}",
+            e.tracking_id, e.destination
+        );
+        let mut cargo = self.cargo_repository.find(e.tracking_id).unwrap();
+        cargo.destination = e.destination;
+        self.cargo_repository
+            .store(cargo.tracking_id.clone(), &cargo)
+            .unwrap();
+    }
+}
+
+impl<T> Clone for CargoDestinationChangedEventHandler<T>
+where
+    T: Repository<TrackingID, Cargo>,
+{
+    fn clone(&self) -> Self {
+        CargoDestinationChangedEventHandler {
             cargo_repository: self.cargo_repository.clone(),
         }
     }

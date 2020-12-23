@@ -1,7 +1,7 @@
 use crate::domain::handling::Cargo;
 use crate::domain::handling::HandlingEventType as DomainHandlingEventType;
 use chrono::prelude::*;
-pub use pb::booking::NewCargoBooked;
+pub use pb::booking::{CargoDestinationChanged, NewCargoBooked};
 pub use pb::handling::handling_service_client::HandlingServiceClient;
 pub use pb::handling::handling_service_server::{HandlingService, HandlingServiceServer};
 pub use pb::handling::{HandlingEventType, RegisterHandlingEventRequest};
@@ -105,5 +105,11 @@ impl TryFrom<NewCargoBooked> for Cargo {
             destination: value.destination,
             arrival_deadline: arrival_deadline,
         })
+    }
+}
+
+impl TypeName for CargoDestinationChanged {
+    fn name() -> &'static str {
+        "CargoDestinationChanged"
     }
 }

@@ -1,6 +1,8 @@
 use handling::application::grpc_server::HandlingServiceImpl;
-use handling::application::integration_events::event_handlers::NewCargoBookedEventHandler;
-use handling::application::pb::{HandlingServiceServer, NewCargoBooked};
+use handling::application::integration_events::event_handlers::{
+    CargoDestinationChangedEventHandler, NewCargoBookedEventHandler,
+};
+use handling::application::pb::{CargoDestinationChanged, HandlingServiceServer, NewCargoBooked};
 use handling::application::service::{EventHandlerImpl, ServiceImpl};
 use handling::domain::handling::{Cargo, HandlingEventFactoryImpl, TrackingID, Voyage};
 use handling::domain::{location, Repository, Result};
@@ -44,13 +46,15 @@ async fn main() -> Result<()> {
     let unimp_event_handler = EventHandlerImpl {};
     let event_factory = HandlingEventFactoryImpl::new(cargos.clone(), voyages, locations);
     // IntegrationEventBus
-    let new_cargo_eh = NewCargoBookedEventHandler::new(cargos);
+    let new_cargo_eh = NewCargoBookedEventHandler::new(cargos.clone());
+    let cargo_dest_changed_eh = CargoDestinationChangedEventHandler::new(cargos);
     let mut event_bus = EventBus::new(&opt.rabbit_uri).await?;
-    event_bus
-            .subscribe::<NewCargoBooked, NewCargoBookedEventHandler<InmemRepository<TrackingID, Cargo>>>(
-                new_cargo_eh,
-            )
-            .await;
+    event_bus.subscribe::<NewCargoBooked, NewCargoBookedEventHandler<InmemRepository<TrackingID, Cargo>>>(
+            new_cargo_eh,
+        ).await;
+    event_bus.subscribe::<CargoDestinationChanged, CargoDestinationChangedEventHandler<InmemRepository<TrackingID, Cargo>>>(
+            cargo_dest_changed_eh
+        ).await;
     // Service
     let srv = ServiceImpl::new_service(handling_events, event_factory, unimp_event_handler);
     let addr = opt.addr.parse()?;
