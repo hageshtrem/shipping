@@ -16,8 +16,8 @@ impl<K, V> InmemRepository<K, V> {
 
 impl<K, V> Repository<K, V> for InmemRepository<K, V>
 where
-    K: Eq + Hash + fmt::Display,
-    V: Clone,
+    K: Eq + Hash + fmt::Display + Send,
+    V: Clone + Send,
 {
     fn store(&self, key: K, value: &V) -> Result<()> {
         let r = self.0.clone();

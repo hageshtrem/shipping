@@ -3,7 +3,7 @@ use crate::domain::{handling::Cargo, handling::TrackingID, Repository};
 use log::info;
 use std::convert::TryInto;
 
-pub trait EventHandler: Send {
+pub trait EventHandler: Clone + Send {
     type Event;
     fn handle(&self, e: Self::Event);
 }
@@ -14,8 +14,6 @@ where
 {
     cargo_repository: T,
 }
-
-unsafe impl<T> Send for NewCargoBookedEventHandler<T> where T: Repository<TrackingID, Cargo> {}
 
 impl<T> NewCargoBookedEventHandler<T>
 where
@@ -31,12 +29,22 @@ where
     T: Repository<TrackingID, Cargo>,
 {
     type Event = NewCargoBooked;
-
     fn handle(&self, e: Self::Event) {
         let cargo: Cargo = e.try_into().unwrap();
-        info!("New cargo is booked {}", cargo.tracking_id);
+        info!("New cargo booked {}", cargo.tracking_id);
         self.cargo_repository
             .store(cargo.tracking_id.clone(), &cargo)
             .unwrap();
+    }
+}
+
+impl<T> Clone for NewCargoBookedEventHandler<T>
+where
+    T: Repository<TrackingID, Cargo>,
+{
+    fn clone(&self) -> Self {
+        NewCargoBookedEventHandler {
+            cargo_repository: self.cargo_repository.clone(),
+        }
     }
 }

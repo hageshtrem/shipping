@@ -4,12 +4,14 @@ use crate::domain::Result;
 use async_trait::async_trait;
 use bytes::Bytes;
 use lapin::{
-    options::*, types::FieldTable, Channel, Connection, ConnectionProperties, ExchangeKind,
+    message::DeliveryResult, options::*, types::FieldTable, Channel, Connection,
+    ConnectionProperties, ConsumerDelegate, ExchangeKind,
 };
 use log::info;
 use prost::Message;
 use std::convert::From;
-use tokio::stream::StreamExt;
+use std::future::Future;
+use std::pin::Pin;
 
 const EXCHANGE_NAME: &'static str = "shipping";
 const QUEUE_NAME: &'static str = "handling.queue";
@@ -18,8 +20,8 @@ const QUEUE_NAME: &'static str = "handling.queue";
 pub trait SubscribeManager {
     async fn subscribe<E, EH>(&mut self, eh: EH)
     where
-        E: Message + TypeName + Default,
-        EH: EventHandler<Event = E> + Send + 'static;
+        E: Message + TypeName + Default + 'static,
+        EH: EventHandler<Event = E> + Send + Sync + 'static;
 }
 
 pub struct EventBus {
@@ -58,8 +60,8 @@ impl EventBus {
 impl SubscribeManager for EventBus {
     async fn subscribe<E, EH>(&mut self, eh: EH)
     where
-        E: Message + TypeName + Default,
-        EH: EventHandler<Event = E> + Send + 'static,
+        E: Message + TypeName + Default + 'static,
+        EH: EventHandler<Event = E> + Send + Sync + 'static,
     {
         self.channel
             .queue_bind(
@@ -72,7 +74,7 @@ impl SubscribeManager for EventBus {
             .wait()
             .unwrap();
 
-        let mut consumer = self
+        let consumer = self
             .channel
             .basic_consume(
                 QUEUE_NAME,
@@ -82,14 +84,34 @@ impl SubscribeManager for EventBus {
             )
             .await
             .unwrap();
+        consumer.set_delegate(Delegate(eh)).unwrap();
+    }
+}
 
-        tokio::spawn(async move {
-            while let Some(delivery) = consumer.next().await {
-                info!("received message");
-                let (_, delivery) = delivery.expect("error in consumer");
-                let e: E = Message::decode(Bytes::from(delivery.data)).unwrap();
+struct Delegate<E, EH>(EH)
+where
+    E: Message + TypeName + Default + 'static,
+    EH: EventHandler<Event = E> + Send + Sync + 'static;
+
+impl<E, EH> ConsumerDelegate for Delegate<E, EH>
+where
+    Self: 'static,
+    E: Message + TypeName + Default + 'static,
+    EH: EventHandler<Event = E> + Send + Sync + 'static,
+{
+    fn on_new_delivery(
+        &self,
+        delivery: DeliveryResult,
+    ) -> Pin<Box<dyn Future<Output = ()> + Send>> {
+        let eh = self.0.clone();
+        Box::pin(async move {
+            info!("received message");
+            let delivery = delivery.expect("error in consumer");
+            if let Some((_, delivery)) = delivery {
+                let e: E = Message::decode(Bytes::from(delivery.data.clone())).unwrap();
                 eh.handle(e);
+                delivery.ack(BasicAckOptions::default()).await.expect("ack");
             }
-        });
+        })
     }
 }
