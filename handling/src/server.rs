@@ -5,7 +5,7 @@ use handling::application::integration_events::event_handlers::{
 use handling::application::pb::{CargoDestinationChanged, HandlingServiceServer, NewCargoBooked};
 use handling::application::service::{EventHandlerImpl, ServiceImpl};
 use handling::domain::handling::{Cargo, HandlingEventFactoryImpl, TrackingID, Voyage};
-use handling::domain::{location, Repository, Result};
+use handling::domain::{location, Repository};
 use handling::infrastructure::inmem_repository::InmemRepository;
 use handling::infrastructure::rabbitmq_eventbus::{EventBus, SubscribeManager};
 
@@ -29,7 +29,7 @@ struct Opt {
 }
 
 #[tokio::main]
-async fn main() -> Result<()> {
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let opt = Opt::from_args();
     if std::env::var("RUST_LOG").is_err() {
         std::env::set_var("RUST_LOG", "info");
@@ -51,10 +51,10 @@ async fn main() -> Result<()> {
     let mut event_bus = EventBus::new(&opt.rabbit_uri).await?;
     event_bus.subscribe::<NewCargoBooked, NewCargoBookedEventHandler<InmemRepository<TrackingID, Cargo>>>(
             new_cargo_eh,
-        ).await;
+        ).await?;
     event_bus.subscribe::<CargoDestinationChanged, CargoDestinationChangedEventHandler<InmemRepository<TrackingID, Cargo>>>(
             cargo_dest_changed_eh
-        ).await;
+        ).await?;
     // Service
     let srv = ServiceImpl::new_service(handling_events, event_factory, unimp_event_handler);
     let addr = opt.addr.parse()?;

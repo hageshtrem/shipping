@@ -1,5 +1,6 @@
 use crate::domain::handling::Cargo;
 use crate::domain::handling::HandlingEventType as DomainHandlingEventType;
+use crate::Error;
 use chrono::prelude::*;
 pub use pb::booking::{CargoDestinationChanged, NewCargoBooked};
 pub use pb::handling::handling_service_client::HandlingServiceClient;
@@ -21,19 +22,8 @@ mod pb {
     }
 }
 
-#[derive(Debug)]
-pub struct ParseError;
-
-impl std::error::Error for ParseError {}
-
-impl std::fmt::Display for ParseError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Parse error")
-    }
-}
-
 impl FromStr for HandlingEventType {
-    type Err = ParseError;
+    type Err = Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
@@ -43,7 +33,7 @@ impl FromStr for HandlingEventType {
             "Receive" => Ok(Self::Receive),
             "Claim" => Ok(Self::Claim),
             "Customs" => Ok(Self::Customs),
-            _ => Err(Self::Err {}),
+            _ => Err(Self::Err::ParsingError),
         }
     }
 }
@@ -62,7 +52,7 @@ impl From<HandlingEventType> for DomainHandlingEventType {
 }
 
 impl TryFrom<i32> for DomainHandlingEventType {
-    type Error = &'static str;
+    type Error = Error;
 
     fn try_from(value: i32) -> Result<Self, Self::Error> {
         match value {
@@ -72,7 +62,7 @@ impl TryFrom<i32> for DomainHandlingEventType {
             4 => Ok(DomainHandlingEventType::Receive),
             5 => Ok(DomainHandlingEventType::Claim),
             6 => Ok(DomainHandlingEventType::Customs),
-            _ => Err("Can't convert to HandlingEventType"),
+            _ => Err(Error::ParsingError),
         }
     }
 }
@@ -88,7 +78,7 @@ impl TypeName for NewCargoBooked {
 }
 
 impl TryFrom<NewCargoBooked> for Cargo {
-    type Error = &'static str;
+    type Error = Error;
 
     fn try_from(value: NewCargoBooked) -> Result<Self, Self::Error> {
         let arrival_deadline = match value.arrival_deadline {

@@ -1,9 +1,8 @@
-use crate::application::error::ErrInvalidArgument;
 use crate::domain::handling::{
     HandlingEvent, HandlingEventFactory, HandlingEventType, TrackingID, VoyageNumber,
 };
-use crate::domain::location::UNLocode;
-use crate::domain::{Repository, Result};
+use crate::domain::{location::UNLocode, Repository};
+use crate::Error;
 use chrono::prelude::*;
 
 pub trait Service {
@@ -14,7 +13,7 @@ pub trait Service {
         voyage_number: VoyageNumber,
         un_locode: UNLocode,
         event_type: HandlingEventType,
-    ) -> Result<()>;
+    ) -> Result<(), Error>;
 }
 
 pub struct ServiceImpl<R, F, H> {
@@ -55,12 +54,12 @@ where
         voyage_number: VoyageNumber,
         un_locode: UNLocode,
         event_type: HandlingEventType,
-    ) -> Result<()> {
+    ) -> Result<(), Error> {
         match event_type {
             HandlingEventType::NotHandled
                 if id.is_empty() || voyage_number.is_empty() || un_locode.is_empty() =>
             {
-                return Err(Box::new(ErrInvalidArgument))
+                return Err(Error::InvalidArgument)
             }
             _ => (),
         }

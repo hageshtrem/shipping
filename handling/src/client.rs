@@ -2,7 +2,6 @@ use chrono::prelude::*;
 use handling::application::pb::{
     HandlingEventType, HandlingServiceClient, RegisterHandlingEventRequest,
 };
-use handling::domain::Result;
 use prost_types::Timestamp;
 use std::time::SystemTime;
 use structopt::StructOpt;
@@ -32,7 +31,7 @@ struct Opt {
 }
 
 #[tokio::main]
-async fn main() -> Result<()> {
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let opt = Opt::from_args();
     let completed = match opt.completed {
         Some(date) => {

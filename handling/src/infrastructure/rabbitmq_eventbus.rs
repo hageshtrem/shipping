@@ -1,13 +1,12 @@
 use crate::application::integration_events::event_handlers::EventHandler;
 use crate::application::pb::TypeName;
-use crate::domain::Result;
 use async_trait::async_trait;
 use bytes::Bytes;
 use lapin::{
     message::DeliveryResult, options::*, types::FieldTable, Channel, Connection,
     ConnectionProperties, ConsumerDelegate, ExchangeKind,
 };
-use log::info;
+use log::{error, info};
 use prost::Message;
 use std::convert::From;
 use std::future::Future;
@@ -16,9 +15,11 @@ use std::pin::Pin;
 const EXCHANGE_NAME: &'static str = "shipping";
 const QUEUE_NAME: &'static str = "handling.queue";
 
+type DynResult<T> = Result<T, Box<dyn std::error::Error>>;
+
 #[async_trait]
 pub trait SubscribeManager {
-    async fn subscribe<E, EH>(&mut self, eh: EH)
+    async fn subscribe<E, EH>(&mut self, eh: EH) -> DynResult<()>
     where
         E: Message + TypeName + Default + 'static,
         EH: EventHandler<Event = E> + Send + Sync + 'static;
@@ -29,7 +30,7 @@ pub struct EventBus {
 }
 
 impl EventBus {
-    pub async fn new(url: &str) -> Result<Self> {
+    pub async fn new(url: &str) -> DynResult<Self> {
         let conn = Connection::connect(url, ConnectionProperties::default()).await?;
         info!("Connected");
         let channel = conn.create_channel().await?;
@@ -58,7 +59,7 @@ impl EventBus {
 
 #[async_trait]
 impl SubscribeManager for EventBus {
-    async fn subscribe<E, EH>(&mut self, eh: EH)
+    async fn subscribe<E, EH>(&mut self, eh: EH) -> DynResult<()>
     where
         E: Message + TypeName + Default + 'static,
         EH: EventHandler<Event = E> + Send + Sync + 'static,
@@ -71,9 +72,7 @@ impl SubscribeManager for EventBus {
                 QueueBindOptions::default(),
                 FieldTable::default(),
             )
-            .wait()
-            .unwrap();
-
+            .await?;
         let consumer = self
             .channel
             .basic_consume(
@@ -82,9 +81,9 @@ impl SubscribeManager for EventBus {
                 BasicConsumeOptions::default(),
                 FieldTable::default(),
             )
-            .await
-            .unwrap();
-        consumer.set_delegate(Delegate(eh)).unwrap();
+            .await?;
+        consumer.set_delegate(Delegate(eh))?;
+        Ok(())
     }
 }
 
@@ -95,7 +94,6 @@ where
 
 impl<E, EH> ConsumerDelegate for Delegate<E, EH>
 where
-    Self: 'static,
     E: Message + TypeName + Default + 'static,
     EH: EventHandler<Event = E> + Send + Sync + 'static,
 {
@@ -105,13 +103,32 @@ where
     ) -> Pin<Box<dyn Future<Output = ()> + Send>> {
         let eh = self.0.clone();
         Box::pin(async move {
-            info!("received message");
-            let delivery = delivery.expect("error in consumer");
-            if let Some((_, delivery)) = delivery {
-                let e: E = Message::decode(Bytes::from(delivery.data.clone())).unwrap();
-                eh.handle(e);
-                delivery.ack(BasicAckOptions::default()).await.expect("ack");
-            }
+            match delivery {
+                Ok(delivery) => {
+                    if let Some((_, delivery)) = delivery {
+                        let e: std::result::Result<E, _> =
+                            Message::decode(Bytes::from(delivery.data.clone()));
+                        match e {
+                            Ok(e) => match eh.handle(e) {
+                                Ok(_) => delivery
+                                    .ack(BasicAckOptions::default())
+                                    .await
+                                    .expect("RabbitMQ ack error"),
+                                Err(err) => {
+                                    error!("error while handling event: {}", err);
+                                    delivery
+                                        .acker
+                                        .nack(BasicNackOptions::default())
+                                        .await
+                                        .expect("RabbitMQ nack error");
+                                }
+                            },
+                            Err(err) => error!("error while decoding message: {}", err),
+                        };
+                    }
+                }
+                Err(err) => error!("error while receiving message: {}", err),
+            };
         })
     }
 }

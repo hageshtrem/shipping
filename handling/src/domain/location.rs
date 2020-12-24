@@ -1,4 +1,5 @@
-use super::{Repository, Result};
+use super::Repository;
+use crate::Error;
 
 // UNLocode is the United Nations location code that uniquely identifies a
 // particular location.
@@ -16,7 +17,9 @@ pub struct Location {
 }
 
 #[allow(non_snake_case)]
-pub fn store_sample_locations<R: Repository<UNLocode, Location>>(repository: &R) -> Result<()> {
+pub fn store_sample_locations<R: Repository<UNLocode, Location>>(
+    repository: &R,
+) -> Result<(), Error> {
     let SESTO = &Location {
         un_locode: "SESTO".to_string(),
         name: "Stockholm".to_string(),

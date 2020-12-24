@@ -1,26 +1,27 @@
 use crate::application::pb::{CargoDestinationChanged, NewCargoBooked};
 use crate::domain::{handling::Cargo, handling::TrackingID, Repository};
+use crate::Error;
 use log::info;
 use std::convert::TryInto;
 
 pub trait EventHandler: Clone + Send {
     type Event;
-    fn handle(&self, e: Self::Event);
+    fn handle(&self, e: Self::Event) -> Result<(), Error>;
 }
 
 pub struct NewCargoBookedEventHandler<T>
 where
     T: Repository<TrackingID, Cargo>,
 {
-    cargo_repository: T,
+    cargos: T,
 }
 
 impl<T> NewCargoBookedEventHandler<T>
 where
     T: Repository<TrackingID, Cargo>,
 {
-    pub fn new(cargo_repository: T) -> Self {
-        NewCargoBookedEventHandler { cargo_repository }
+    pub fn new(cargos: T) -> Self {
+        NewCargoBookedEventHandler { cargos }
     }
 }
 
@@ -29,12 +30,11 @@ where
     T: Repository<TrackingID, Cargo>,
 {
     type Event = NewCargoBooked;
-    fn handle(&self, e: Self::Event) {
-        let cargo: Cargo = e.try_into().unwrap();
+    fn handle(&self, e: Self::Event) -> Result<(), Error> {
+        let cargo: Cargo = e.try_into()?;
         info!("New cargo booked {}", cargo.tracking_id);
-        self.cargo_repository
-            .store(cargo.tracking_id.clone(), &cargo)
-            .unwrap();
+        self.cargos.store(cargo.tracking_id.clone(), &cargo)?;
+        Ok(())
     }
 }
 
@@ -44,7 +44,7 @@ where
 {
     fn clone(&self) -> Self {
         NewCargoBookedEventHandler {
-            cargo_repository: self.cargo_repository.clone(),
+            cargos: self.cargos.clone(),
         }
     }
 }
@@ -53,15 +53,15 @@ pub struct CargoDestinationChangedEventHandler<T>
 where
     T: Repository<TrackingID, Cargo>,
 {
-    cargo_repository: T,
+    cargos: T,
 }
 
 impl<T> CargoDestinationChangedEventHandler<T>
 where
     T: Repository<TrackingID, Cargo>,
 {
-    pub fn new(cargo_repository: T) -> Self {
-        CargoDestinationChangedEventHandler { cargo_repository }
+    pub fn new(cargos: T) -> Self {
+        CargoDestinationChangedEventHandler { cargos }
     }
 }
 
@@ -70,16 +70,15 @@ where
     T: Repository<TrackingID, Cargo>,
 {
     type Event = CargoDestinationChanged;
-    fn handle(&self, e: Self::Event) {
+    fn handle(&self, e: Self::Event) -> Result<(), Error> {
         info!(
             "Cargo {} destination changed {}",
             e.tracking_id, e.destination
         );
-        let mut cargo = self.cargo_repository.find(e.tracking_id).unwrap();
+        let mut cargo = self.cargos.find(e.tracking_id)?;
         cargo.destination = e.destination;
-        self.cargo_repository
-            .store(cargo.tracking_id.clone(), &cargo)
-            .unwrap();
+        self.cargos.store(cargo.tracking_id.clone(), &cargo)?;
+        Ok(())
     }
 }
 
@@ -89,7 +88,7 @@ where
 {
     fn clone(&self) -> Self {
         CargoDestinationChangedEventHandler {
-            cargo_repository: self.cargo_repository.clone(),
+            cargos: self.cargos.clone(),
         }
     }
 }

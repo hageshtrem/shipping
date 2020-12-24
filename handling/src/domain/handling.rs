@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 use super::location::{Location, UNLocode};
-use super::{Repository, Result};
+use super::Repository;
+use crate::Error;
 use chrono::prelude::*;
 
 #[derive(Debug, Clone)]
@@ -35,7 +36,7 @@ pub trait HandlingEventFactory {
         voyage_number: VoyageNumber,
         un_locode: UNLocode,
         event_type: HandlingEventType,
-    ) -> Result<HandlingEvent>;
+    ) -> Result<HandlingEvent, Error>;
 }
 
 pub struct HandlingEventFactoryImpl<C, V, L> {
@@ -68,7 +69,7 @@ where
         voyage_number: VoyageNumber,
         un_locode: UNLocode,
         event_type: HandlingEventType,
-    ) -> Result<HandlingEvent> {
+    ) -> Result<HandlingEvent, Error> {
         self.cargo_repository.find(id.clone())?;
         // When creating a Receive event, the voyage number is not known.
         if !voyage_number.is_empty() {

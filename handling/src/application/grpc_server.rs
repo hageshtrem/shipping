@@ -1,6 +1,7 @@
 use super::service::Service;
-use crate::domain::handling::{TrackingID, VoyageNumber};
+use crate::domain::handling::{HandlingEventType, TrackingID, VoyageNumber};
 use crate::domain::location::UNLocode;
+use crate::Error;
 use chrono::prelude::*;
 use std::convert::{TryFrom, TryInto};
 use std::time::SystemTime;
@@ -32,9 +33,10 @@ impl<S: Service + Sync + Send + 'static> HandlingService for HandlingServiceImpl
             None => Utc::now(),
         };
 
-        let event_type = match message.event_type.try_into() {
+        let event_type_result: Result<HandlingEventType, Error> = message.event_type.try_into();
+        let event_type = match event_type_result {
             Ok(etype) => etype,
-            Err(msg) => return Err(Status::new(Code::InvalidArgument, msg)),
+            Err(err) => return Err(Status::new(Code::InvalidArgument, err.to_string())),
         };
 
         if let Err(error) = self.0.register_handling_event(
