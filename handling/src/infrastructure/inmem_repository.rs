@@ -6,6 +6,7 @@ use std::hash::Hash;
 use std::ops::{Deref, DerefMut};
 use std::sync::{Arc, Mutex};
 
+#[derive(Clone)]
 pub struct InmemRepository<K, V>(Arc<Mutex<HashMap<K, V>>>);
 
 impl<K, V> InmemRepository<K, V> {
@@ -16,7 +17,7 @@ impl<K, V> InmemRepository<K, V> {
 
 impl<K, V> Repository<K, V> for InmemRepository<K, V>
 where
-    K: Eq + Hash + std::fmt::Display + Send,
+    K: Eq + Hash + std::fmt::Display + Clone + Send,
     V: Clone + Send,
 {
     fn store(&self, key: K, value: &V) -> Result<(), Error> {
@@ -40,15 +41,5 @@ where
         let data = r.lock().unwrap();
         let res = data.deref().values().map(|v| v.clone()).collect();
         Ok(res)
-    }
-}
-
-impl<K, V> Clone for InmemRepository<K, V>
-where
-    K: Eq + Hash + std::fmt::Display,
-    V: Clone,
-{
-    fn clone(&self) -> Self {
-        InmemRepository(self.0.clone())
     }
 }

@@ -9,6 +9,7 @@ pub trait EventHandler: Clone + Send {
     fn handle(&self, e: Self::Event) -> Result<(), Error>;
 }
 
+#[derive(Clone)]
 pub struct NewCargoBookedEventHandler<T>
 where
     T: Repository<TrackingID, Cargo>,
@@ -38,17 +39,7 @@ where
     }
 }
 
-impl<T> Clone for NewCargoBookedEventHandler<T>
-where
-    T: Repository<TrackingID, Cargo>,
-{
-    fn clone(&self) -> Self {
-        NewCargoBookedEventHandler {
-            cargos: self.cargos.clone(),
-        }
-    }
-}
-
+#[derive(Clone)]
 pub struct CargoDestinationChangedEventHandler<T>
 where
     T: Repository<TrackingID, Cargo>,
@@ -79,16 +70,5 @@ where
         cargo.destination = e.destination;
         self.cargos.store(cargo.tracking_id.clone(), &cargo)?;
         Ok(())
-    }
-}
-
-impl<T> Clone for CargoDestinationChangedEventHandler<T>
-where
-    T: Repository<TrackingID, Cargo>,
-{
-    fn clone(&self) -> Self {
-        CargoDestinationChangedEventHandler {
-            cargos: self.cargos.clone(),
-        }
     }
 }

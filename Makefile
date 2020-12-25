@@ -16,6 +16,6 @@ gen-tracking:
 	@protoc --proto_path=proto --go_out=tracking/pb proto/booking_events.proto proto/itinerary.proto
 
 gen-handling:
-	@cp -r proto handling/proto
+	@cp -r proto/ handling/proto
 
 .PHONY: gen gen-booking gen-pathfinder gen-tracking gen-handling run
