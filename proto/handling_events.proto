@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package handling;
+
+import "handling.proto";
+
+message HandlingEvent {
+  string tracking_id = 1;
+  Activity activity = 2;
+}
+
+message Activity {
+  handling.HandlingEventType type = 1;
+  string location = 2;
+  string voyage_number = 3;
+}

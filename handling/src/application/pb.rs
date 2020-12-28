@@ -1,12 +1,14 @@
 use crate::domain::handling::Cargo;
+use crate::domain::handling::HandlingActivity as DomainHandlingActivity;
+use crate::domain::handling::HandlingEvent as DomainHandlingEvent;
 use crate::domain::handling::HandlingEventType as DomainHandlingEventType;
 use crate::Error;
 use chrono::prelude::*;
 pub use pb::booking::{CargoDestinationChanged, NewCargoBooked};
 pub use pb::handling::handling_service_client::HandlingServiceClient;
 pub use pb::handling::handling_service_server::{HandlingService, HandlingServiceServer};
-pub use pb::handling::{HandlingEventType, RegisterHandlingEventRequest};
-use std::convert::{From, TryFrom};
+pub use pb::handling::{Activity, HandlingEvent, HandlingEventType, RegisterHandlingEventRequest};
+use std::convert::{From, Into, TryFrom};
 use std::str::FromStr;
 use std::time::SystemTime;
 
@@ -53,16 +55,66 @@ impl From<HandlingEventType> for DomainHandlingEventType {
 
 impl TryFrom<i32> for DomainHandlingEventType {
     type Error = Error;
-
     fn try_from(value: i32) -> Result<Self, Self::Error> {
         match value {
             0 => Ok(DomainHandlingEventType::NotHandled),
             1 => Ok(DomainHandlingEventType::Load),
-            3 => Ok(DomainHandlingEventType::Unload),
-            4 => Ok(DomainHandlingEventType::Receive),
-            5 => Ok(DomainHandlingEventType::Claim),
-            6 => Ok(DomainHandlingEventType::Customs),
+            2 => Ok(DomainHandlingEventType::Unload),
+            3 => Ok(DomainHandlingEventType::Receive),
+            4 => Ok(DomainHandlingEventType::Claim),
+            5 => Ok(DomainHandlingEventType::Customs),
             _ => Err(Error::ParsingError),
+        }
+    }
+}
+
+impl From<DomainHandlingEventType> for i32 {
+    fn from(value: DomainHandlingEventType) -> Self {
+        match value {
+            DomainHandlingEventType::NotHandled => 0,
+            DomainHandlingEventType::Load => 1,
+            DomainHandlingEventType::Unload => 2,
+            DomainHandlingEventType::Receive => 3,
+            DomainHandlingEventType::Claim => 4,
+            DomainHandlingEventType::Customs => 5,
+        }
+    }
+}
+
+impl TryFrom<NewCargoBooked> for Cargo {
+    type Error = Error;
+    fn try_from(value: NewCargoBooked) -> Result<Self, Self::Error> {
+        let arrival_deadline = match value.arrival_deadline {
+            Some(prost_timestamp) => {
+                let sys_time = SystemTime::try_from(prost_timestamp).unwrap();
+                DateTime::<Utc>::from(sys_time)
+            }
+            None => Utc::now(), // TODO
+        };
+        Ok(Cargo {
+            tracking_id: value.tracking_id,
+            origin: value.origin,
+            destination: value.destination,
+            arrival_deadline: arrival_deadline,
+        })
+    }
+}
+
+impl From<DomainHandlingActivity> for Activity {
+    fn from(value: DomainHandlingActivity) -> Self {
+        Activity {
+            r#type: value.r#type.into(),
+            location: value.location,
+            voyage_number: value.voyage_number,
+        }
+    }
+}
+
+impl From<DomainHandlingEvent> for HandlingEvent {
+    fn from(value: DomainHandlingEvent) -> Self {
+        HandlingEvent {
+            tracking_id: value.tracking_id,
+            activity: Some(value.activity.into()),
         }
     }
 }
@@ -77,29 +129,14 @@ impl TypeName for NewCargoBooked {
     }
 }
 
-impl TryFrom<NewCargoBooked> for Cargo {
-    type Error = Error;
-
-    fn try_from(value: NewCargoBooked) -> Result<Self, Self::Error> {
-        let arrival_deadline = match value.arrival_deadline {
-            Some(prost_timestamp) => {
-                let sys_time = SystemTime::try_from(prost_timestamp).unwrap();
-                DateTime::<Utc>::from(sys_time)
-            }
-            None => Utc::now(), // TODO
-        };
-
-        Ok(Cargo {
-            tracking_id: value.tracking_id,
-            origin: value.origin,
-            destination: value.destination,
-            arrival_deadline: arrival_deadline,
-        })
-    }
-}
-
 impl TypeName for CargoDestinationChanged {
     fn name() -> &'static str {
         "CargoDestinationChanged"
+    }
+}
+
+impl TypeName for HandlingEvent {
+    fn name() -> &'static str {
+        "HandlingEvent"
     }
 }

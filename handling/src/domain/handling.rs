@@ -16,15 +16,15 @@ pub enum HandlingEventType {
 
 #[derive(Clone)]
 pub struct HandlingActivity {
-    r#type: HandlingEventType,
-    location: UNLocode,
-    voyage_number: VoyageNumber,
+    pub r#type: HandlingEventType,
+    pub location: UNLocode,
+    pub voyage_number: VoyageNumber,
 }
 
 #[derive(Clone)]
 pub struct HandlingEvent {
-    tracking_id: TrackingID,
-    activity: HandlingActivity,
+    pub tracking_id: TrackingID,
+    pub activity: HandlingActivity,
 }
 
 pub trait HandlingEventFactory {
