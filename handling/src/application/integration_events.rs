@@ -1,8 +1,15 @@
 use crate::application::pb::{CargoDestinationChanged, NewCargoBooked};
-use crate::domain::{handling::Cargo, handling::TrackingID, Repository};
+use crate::domain::handling::{Cargo, HandlingEvent, TrackingID};
+use crate::domain::Repository;
 use crate::Error;
+use async_trait::async_trait;
 use log::info;
 use std::convert::TryInto;
+
+#[async_trait]
+pub trait EventService {
+    async fn cargo_was_handled(&self, e: HandlingEvent) -> Result<(), Error>;
+}
 
 pub trait EventHandler: Clone + Send {
     type Event;
