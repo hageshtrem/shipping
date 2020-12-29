@@ -1,12 +1,15 @@
+use super::integration_events::EventService;
 use crate::domain::handling::{
     HandlingEvent, HandlingEventFactory, HandlingEventType, TrackingID, VoyageNumber,
 };
 use crate::domain::{location::UNLocode, Repository};
 use crate::Error;
+use async_trait::async_trait;
 use chrono::prelude::*;
 
+#[async_trait]
 pub trait Service {
-    fn register_handling_event(
+    async fn register_handling_event(
         &self,
         completed: DateTime<Utc>,
         id: TrackingID,
@@ -26,7 +29,7 @@ impl<R, F, H> ServiceImpl<R, F, H>
 where
     R: Repository<TrackingID, HandlingEvent>,
     F: HandlingEventFactory,
-    H: EventHandler,
+    H: EventService,
 {
     pub fn new_service(
         handling_event_repository: R,
@@ -41,13 +44,14 @@ where
     }
 }
 
+#[async_trait]
 impl<R, F, H> Service for ServiceImpl<R, F, H>
 where
     R: Repository<TrackingID, HandlingEvent>,
     F: HandlingEventFactory,
-    H: EventHandler,
+    H: EventService,
 {
-    fn register_handling_event(
+    async fn register_handling_event(
         &self,
         completed: DateTime<Utc>,
         id: TrackingID,
@@ -74,19 +78,7 @@ where
         )?;
 
         self.handling_event_repository.store(id, &e)?;
-        self.event_handler.cargo_was_handled(e);
+        self.event_handler.cargo_was_handled(e).await?;
         Ok(())
-    }
-}
-
-pub trait EventHandler {
-    fn cargo_was_handled(&self, e: HandlingEvent);
-}
-
-pub struct EventHandlerImpl;
-
-impl EventHandler for EventHandlerImpl {
-    fn cargo_was_handled(&self, _e: HandlingEvent) {
-        println!("Cargo was handled")
     }
 }

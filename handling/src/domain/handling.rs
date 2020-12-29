@@ -14,20 +14,20 @@ pub enum HandlingEventType {
     Customs,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct HandlingActivity {
     pub r#type: HandlingEventType,
     pub location: UNLocode,
     pub voyage_number: VoyageNumber,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct HandlingEvent {
     pub tracking_id: TrackingID,
     pub activity: HandlingActivity,
 }
 
-pub trait HandlingEventFactory {
+pub trait HandlingEventFactory: Send + Sync {
     fn create_handling_event(
         &self,
         registered: DateTime<Utc>,

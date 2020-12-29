@@ -7,7 +7,7 @@ use log::info;
 use std::convert::TryInto;
 
 #[async_trait]
-pub trait EventService {
+pub trait EventService: Send + Sync {
     async fn cargo_was_handled(&self, e: HandlingEvent) -> Result<(), Error>;
 }
 
