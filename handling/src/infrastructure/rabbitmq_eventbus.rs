@@ -1,9 +1,11 @@
-use crate::application::integration_events::event_handlers::EventHandler;
-use crate::application::pb::TypeName;
+use crate::application::integration_events::{EventHandler, EventService};
+use crate::application::pb::{HandlingEvent as PbHandlingEvent, TypeName};
+use crate::domain::handling::HandlingEvent;
+use crate::Error;
 use async_trait::async_trait;
 use bytes::Bytes;
 use lapin::{
-    message::DeliveryResult, options::*, types::FieldTable, Channel, Connection,
+    message::DeliveryResult, options::*, types::FieldTable, BasicProperties, Channel, Connection,
     ConnectionProperties, ConsumerDelegate, ExchangeKind,
 };
 use log::{error, info};
@@ -54,6 +56,27 @@ impl EventBus {
             .await?;
 
         Ok(EventBus { channel })
+    }
+}
+
+#[async_trait]
+impl EventService for EventBus {
+    async fn cargo_was_handled(&self, e: HandlingEvent) -> Result<(), Error> {
+        info!("{:?} cargo {}", e.activity.r#type, e.tracking_id);
+        let pb_event: PbHandlingEvent = e.into();
+        let mut buf = vec![];
+        pb_event.encode(&mut buf)?;
+        let _confitm = self
+            .channel
+            .basic_publish(
+                EXCHANGE_NAME,
+                PbHandlingEvent::name(),
+                BasicPublishOptions::default(),
+                buf,
+                BasicProperties::default(),
+            )
+            .await?;
+        Ok(())
     }
 }
 
