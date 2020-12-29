@@ -1,9 +1,9 @@
 use handling::application::grpc_server::HandlingServiceImpl;
-use handling::application::integration_events::event_handlers::{
+use handling::application::integration_events::{
     CargoDestinationChangedEventHandler, NewCargoBookedEventHandler,
 };
 use handling::application::pb::{CargoDestinationChanged, HandlingServiceServer, NewCargoBooked};
-use handling::application::service::{EventHandlerImpl, ServiceImpl};
+use handling::application::service::ServiceImpl;
 use handling::domain::handling::{Cargo, HandlingEventFactoryImpl, TrackingID, Voyage};
 use handling::domain::{location, Repository};
 use handling::infrastructure::inmem_repository::InmemRepository;
@@ -43,8 +43,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let locations = InmemRepository::new();
     location::store_sample_locations(&locations)?;
     let handling_events = InmemRepository::new();
-    let unimp_event_handler = EventHandlerImpl {};
     let event_factory = HandlingEventFactoryImpl::new(cargos.clone(), voyages, locations);
+
     // IntegrationEventBus
     let new_cargo_eh = NewCargoBookedEventHandler::new(cargos.clone());
     let cargo_dest_changed_eh = CargoDestinationChangedEventHandler::new(cargos);
@@ -55,8 +55,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     event_bus.subscribe::<CargoDestinationChanged, CargoDestinationChangedEventHandler<InmemRepository<TrackingID, Cargo>>>(
             cargo_dest_changed_eh
         ).await?;
+
     // Service
-    let srv = ServiceImpl::new_service(handling_events, event_factory, unimp_event_handler);
+    let srv = ServiceImpl::new_service(handling_events, event_factory, event_bus);
     let addr = opt.addr.parse()?;
     let gservice = HandlingServiceImpl::new(srv);
 

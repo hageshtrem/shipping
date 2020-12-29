@@ -39,13 +39,17 @@ impl<S: Service + Sync + Send + 'static> HandlingService for HandlingServiceImpl
             Err(err) => return Err(Status::new(Code::InvalidArgument, err.to_string())),
         };
 
-        if let Err(error) = self.0.register_handling_event(
-            completed,
-            message.id as TrackingID,
-            message.voyage_number as VoyageNumber,
-            message.un_locode as UNLocode,
-            event_type,
-        ) {
+        if let Err(error) = self
+            .0
+            .register_handling_event(
+                completed,
+                message.id as TrackingID,
+                message.voyage_number as VoyageNumber,
+                message.un_locode as UNLocode,
+                event_type,
+            )
+            .await
+        {
             return Err(Status::new(Code::Internal, error.to_string()));
         }
         Ok(Response::new(()))
