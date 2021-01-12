@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package handling;
 
+option go_package = "handling/pb";
+
 import "handling.proto";
 
 message HandlingEvent {

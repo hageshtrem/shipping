@@ -20,13 +20,17 @@ type Cargo struct {
 // NewCargo creates a new, unrouted cargo.
 func NewCargo(id TrackingID, rs RouteSpecification) *Cargo {
 	itinerary := Itinerary{}
-	history := HandlingHistory{make([]HandlingEvent, 0)}
-
+	handlingEvent := HandlingEvent{
+		TrackingID: id,
+		Activity: HandlingActivity{
+			Type: NotHandled,
+		},
+	}
 	return &Cargo{
 		TrackingID:         id,
 		Origin:             rs.Origin,
 		RouteSpecification: rs,
-		Delivery:           DeriveDeliveryFrom(rs, itinerary, history),
+		Delivery:           DeriveDeliveryFrom(rs, itinerary, handlingEvent),
 	}
 }
 
@@ -40,6 +44,12 @@ func (c *Cargo) AssignToRoute(itinerary Itinerary) {
 func (c *Cargo) SpecifyNewRoute(rs RouteSpecification) {
 	c.RouteSpecification = rs
 	c.Delivery = c.Delivery.UpdateOnRouting(c.RouteSpecification, c.Itinerary)
+}
+
+// DeriveDeliveryProgress updates all aspects of the cargo aggregate status
+// based on the current route specification, itinerary and handling of the cargo.
+func (c *Cargo) DeriveDeliveryProgress(event HandlingEvent) {
+	c.Delivery = DeriveDeliveryFrom(c.RouteSpecification, c.Itinerary, event)
 }
 
 // CargoRepository provides access a cargo store.

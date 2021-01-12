@@ -35,9 +35,8 @@ func (d Delivery) IsOnTrack() bool {
 // DeriveDeliveryFrom creates a new delivery snapshot based on the complete
 // handling history of a cargo, as well as its route specification and
 // itinerary.
-func DeriveDeliveryFrom(rs RouteSpecification, itinerary Itinerary, history HandlingHistory) Delivery {
-	lastEvent, _ := history.MostRecentlyCompletedEvent()
-	return newDelivery(lastEvent, itinerary, rs)
+func DeriveDeliveryFrom(rs RouteSpecification, itinerary Itinerary, event HandlingEvent) Delivery {
+	return newDelivery(event, itinerary, rs)
 }
 
 // newDelivery creates a up-to-date delivery based on an handling event,

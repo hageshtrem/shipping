@@ -2,10 +2,6 @@ package domain
 
 // TODO: It would make sense not having the cargo package depend on handling.
 
-import (
-	"errors"
-)
-
 // HandlingActivity represents how and where a cargo can be handled, and can
 // be used to express predictions about what is expected to happen to a cargo
 // in the future.
@@ -52,24 +48,4 @@ func (t HandlingEventType) String() string {
 	}
 
 	return ""
-}
-
-// HandlingHistory is the handling history of a cargo.
-type HandlingHistory struct {
-	HandlingEvents []HandlingEvent
-}
-
-// MostRecentlyCompletedEvent returns most recently completed handling event.
-func (h HandlingHistory) MostRecentlyCompletedEvent() (HandlingEvent, error) {
-	if len(h.HandlingEvents) == 0 {
-		return HandlingEvent{}, errors.New("delivery history is empty")
-	}
-
-	return h.HandlingEvents[len(h.HandlingEvents)-1], nil
-}
-
-// HandlingEventRepository provides access a handling event store.
-type HandlingEventRepository interface {
-	Store(e HandlingEvent)
-	QueryHandlingHistory(TrackingID) HandlingHistory
 }
