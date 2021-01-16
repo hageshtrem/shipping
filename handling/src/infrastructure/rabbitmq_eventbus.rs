@@ -73,7 +73,7 @@ impl EventService for EventBus {
                 PbHandlingEvent::name(),
                 BasicPublishOptions::default(),
                 buf,
-                BasicProperties::default(),
+                BasicProperties::default().with_kind(PbHandlingEvent::name().into()),
             )
             .await?;
         Ok(())

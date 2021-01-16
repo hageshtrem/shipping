@@ -9,6 +9,8 @@ import (
 )
 
 type EventBus interface {
+	// Subscribe registers a handler for specific type of event.
+	Subscribe(event proto.Message, eventHandler EventHandler) error
 	Publish(proto.Message) error
 	Close()
 }

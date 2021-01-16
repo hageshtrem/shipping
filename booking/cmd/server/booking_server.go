@@ -13,6 +13,7 @@ import (
 	app "booking/application"
 	infra "booking/infrastructure"
 	"booking/pb"
+	handling "booking/pb/handling/pb"
 )
 
 type envConfig struct {
@@ -29,10 +30,13 @@ func main() {
 	checkErr(err)
 	cargos := infra.NewCargoRepository()
 	locations := infra.NewLocationRepository()
+
 	eventBus, err := infra.NewEventBus(envCfg.RabbitURI)
 	checkErr(err)
 	defer eventBus.Close()
 	eventService := app.NewEventService(eventBus)
+	cargoHandledEH := app.NewCargoHandledEventHandler(cargos, eventService)
+	checkErr(eventBus.Subscribe(&handling.HandlingEvent{}, cargoHandledEH))
 
 	bookingSvc := app.NewService(cargos, locations, routingSvc, eventService)
 
