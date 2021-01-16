@@ -17,6 +17,7 @@ type EventService interface {
 	NewCargoBooked(*domain.Cargo) error
 	DestinationChanged(*domain.Cargo) error
 	CargoToRouteAssigned(*domain.Cargo) error
+	CargoWasHandled(*domain.Cargo) error
 }
 
 func NewEventService(eventBus EventBus) EventService {
@@ -67,6 +68,15 @@ func (es *eventService) CargoToRouteAssigned(c *domain.Cargo) error {
 		TrackingId: string(c.TrackingID),
 		Eta:        pbEta,
 		Itinerary:  pbItinerary,
+	}
+
+	return es.eventBus.Publish(event)
+}
+
+func (es *eventService) CargoWasHandled(c *domain.Cargo) error {
+	event, err := encodeCargoWasHandled(c)
+	if err != nil {
+		return err
 	}
 
 	return es.eventBus.Publish(event)

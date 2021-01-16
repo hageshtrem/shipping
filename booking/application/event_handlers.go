@@ -11,15 +11,16 @@ type EventHandler interface {
 	Handle(event proto.Message) error
 }
 
-type cargoHandled struct {
-	cargos domain.CargoRepository
+type cargoHandledEventHandler struct {
+	cargos       domain.CargoRepository
+	eventService EventService
 }
 
-func CargoHandled(cargos domain.CargoRepository) EventHandler {
-	return &cargoHandled{cargos}
+func NewCargoHandledEventHandler(cargos domain.CargoRepository, es EventService) EventHandler {
+	return &cargoHandledEventHandler{cargos, es}
 }
 
-func (eh *cargoHandled) Handle(event proto.Message) error {
+func (eh *cargoHandledEventHandler) Handle(event proto.Message) error {
 	handlingEvent := event.(*handling.HandlingEvent)
 	domainHandlingEvent := domain.HandlingEvent{
 		TrackingID: domain.TrackingID(handlingEvent.TrackingId),
@@ -29,8 +30,15 @@ func (eh *cargoHandled) Handle(event proto.Message) error {
 	if err != nil {
 		return err
 	}
+
+	// TODO: It needs to be transactional
 	cargo.DeriveDeliveryProgress(domainHandlingEvent)
-	return nil
+
+	if err = eh.eventService.CargoWasHandled(cargo); err != nil {
+		return err
+	}
+
+	return eh.cargos.Store(cargo)
 }
 
 func decodeHandlingActivity(activity *handling.Activity) domain.HandlingActivity {

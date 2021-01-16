@@ -8,7 +8,7 @@ gen-pathfinder:
 
 gen-booking:
 	@protoc --proto_path=proto --go_out=:. --go-grpc_out=:. proto/booking.proto proto/itinerary.proto
-	@protoc --proto_path=proto --go_out=:. proto/booking_events.proto proto/itinerary.proto proto/handling.proto proto/handling_events.proto
+	@protoc --proto_path=proto --go_out=:. proto/booking_events.proto proto/itinerary.proto
 	@protoc --proto_path=proto --go_out=booking/pb proto/handling.proto proto/handling_events.proto
 	@protoc --go_out=booking/pb --go-grpc_out=booking/pb proto/pathfinder.proto
 

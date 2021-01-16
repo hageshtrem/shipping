@@ -32,7 +32,7 @@ func (d Delivery) IsOnTrack() bool {
 	return d.RoutingStatus == Routed && !d.IsMisdirected
 }
 
-// DeriveDeliveryFrom creates a new delivery snapshot based on the complete
+// DeriveDeliveryFrom creates a new delivery snapshot based on the last event of
 // handling history of a cargo, as well as its route specification and
 // itinerary.
 func DeriveDeliveryFrom(rs RouteSpecification, itinerary Itinerary, event HandlingEvent) Delivery {
