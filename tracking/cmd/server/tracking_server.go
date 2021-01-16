@@ -28,6 +28,7 @@ func main() {
 	newCargoEH := application.NewCargoBookedEventHandler(cargos)
 	destChangedEH := application.NewCargoDestinationChangedEventHandler(cargos)
 	routeAssignedEH := application.NewCargoToRouteAssignedEventHandler(cargos)
+	cargoWasHandledEH := application.NewCargoWasHandledEventHandler(cargos)
 
 	errChan := make(chan error)
 
@@ -39,6 +40,7 @@ func main() {
 	checkErr(eventBus.Subscribe(&booking.NewCargoBooked{}, newCargoEH))
 	checkErr(eventBus.Subscribe(&booking.CargoDestinationChanged{}, destChangedEH))
 	checkErr(eventBus.Subscribe(&booking.CargoToRouteAssigned{}, routeAssignedEH))
+	checkErr(eventBus.Subscribe(&booking.CargoWasHandled{}, cargoWasHandledEH))
 
 	trackingSvc := application.NewService(cargos)
 
