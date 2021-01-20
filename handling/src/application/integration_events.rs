@@ -11,9 +11,8 @@ pub trait EventService: Send + Sync {
     async fn cargo_was_handled(&self, e: HandlingEvent) -> Result<(), Error>;
 }
 
-pub trait EventHandler: Clone + Send {
-    type Event;
-    fn handle(&self, e: Self::Event) -> Result<(), Error>;
+pub trait EventHandler<Event>: Clone + Send {
+    fn handle(&self, e: Event) -> Result<(), Error>;
 }
 
 #[derive(Clone)]
@@ -33,12 +32,11 @@ where
     }
 }
 
-impl<T> EventHandler for NewCargoBookedEventHandler<T>
+impl<T> EventHandler<NewCargoBooked> for NewCargoBookedEventHandler<T>
 where
     T: Repository<TrackingID, Cargo>,
 {
-    type Event = NewCargoBooked;
-    fn handle(&self, e: Self::Event) -> Result<(), Error> {
+    fn handle(&self, e: NewCargoBooked) -> Result<(), Error> {
         let cargo: Cargo = e.try_into()?;
         info!("New cargo booked {}", cargo.tracking_id);
         self.cargos.store(cargo.tracking_id.clone(), &cargo)?;
@@ -63,12 +61,11 @@ where
     }
 }
 
-impl<T> EventHandler for CargoDestinationChangedEventHandler<T>
+impl<T> EventHandler<CargoDestinationChanged> for CargoDestinationChangedEventHandler<T>
 where
     T: Repository<TrackingID, Cargo>,
 {
-    type Event = CargoDestinationChanged;
-    fn handle(&self, e: Self::Event) -> Result<(), Error> {
+    fn handle(&self, e: CargoDestinationChanged) -> Result<(), Error> {
         info!(
             "Cargo {} destination changed {}",
             e.tracking_id, e.destination

@@ -7,6 +7,7 @@ pub enum Error {
     RepositoryError(String),
     ParsingError,
     EncodeError(prost::EncodeError),
+    DecodeError(prost::DecodeError),
     LapinError(lapin::Error),
 }
 
@@ -18,6 +19,7 @@ impl fmt::Display for Error {
             Error::RepositoryError(msg) => write!(f, "Repository error: {}", msg),
             Error::ParsingError => write!(f, "Parsing error"),
             Error::EncodeError(err) => write!(f, "{}", err.to_string()),
+            Error::DecodeError(err) => write!(f, "{}", err.to_string()),
             Error::LapinError(err) => write!(f, "{}", err.to_string()),
         }
     }
@@ -28,6 +30,12 @@ impl error::Error for Error {}
 impl From<prost::EncodeError> for Error {
     fn from(value: prost::EncodeError) -> Self {
         Error::EncodeError(value)
+    }
+}
+
+impl From<prost::DecodeError> for Error {
+    fn from(value: prost::DecodeError) -> Self {
+        Error::DecodeError(value)
     }
 }
 
