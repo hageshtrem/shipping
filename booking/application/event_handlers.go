@@ -7,6 +7,7 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
+// EventHandler is an abstraction for an event handler.
 type EventHandler interface {
 	Handle(event proto.Message) error
 }
@@ -16,6 +17,7 @@ type cargoHandledEventHandler struct {
 	eventService EventService
 }
 
+// NewCargoHandledEventHandler return a handler for the CargoHandled event.
 func NewCargoHandledEventHandler(cargos domain.CargoRepository, es EventService) EventHandler {
 	return &cargoHandledEventHandler{cargos, es}
 }
@@ -39,12 +41,4 @@ func (eh *cargoHandledEventHandler) Handle(event proto.Message) error {
 	}
 
 	return eh.cargos.Store(cargo)
-}
-
-func decodeHandlingActivity(activity *handling.Activity) domain.HandlingActivity {
-	return domain.HandlingActivity{
-		Type:         domain.HandlingEventType(activity.Type),
-		Location:     domain.UNLocode(activity.Location),
-		VoyageNumber: domain.VoyageNumber(activity.VoyageNumber),
-	}
 }

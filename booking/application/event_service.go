@@ -8,13 +8,17 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
+// EventBus is abstraction for Pub/Sub bus.
 type EventBus interface {
+	// Publish publishes the event to the bus.
+	Publish(proto.Message) error
 	// Subscribe registers a handler for specific type of event.
 	Subscribe(event proto.Message, eventHandler EventHandler) error
-	Publish(proto.Message) error
+	// Close closes the connection.
 	Close()
 }
 
+// EventService provides methods for publish specific events.
 type EventService interface {
 	NewCargoBooked(*domain.Cargo) error
 	DestinationChanged(*domain.Cargo) error
@@ -22,6 +26,7 @@ type EventService interface {
 	CargoWasHandled(*domain.Cargo) error
 }
 
+// NewEventService returns an instance of EventService.
 func NewEventService(eventBus EventBus) EventService {
 	return &eventService{eventBus}
 }
@@ -31,16 +36,9 @@ type eventService struct {
 }
 
 func (es *eventService) NewCargoBooked(c *domain.Cargo) error {
-	pbArrivalDeadline, err := ptypes.TimestampProto(c.RouteSpecification.ArrivalDeadline)
+	event, err := encodeNewCargoBooked(c)
 	if err != nil {
 		return err
-	}
-
-	event := &pb.NewCargoBooked{
-		TrackingId:      string(c.TrackingID),
-		Origin:          string(c.Origin),
-		Destination:     string(c.RouteSpecification.Destination),
-		ArrivalDeadline: pbArrivalDeadline,
 	}
 
 	return es.eventBus.Publish(event)

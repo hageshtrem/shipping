@@ -36,10 +36,15 @@ message CargoWasHandled {
 }
 
 message Delivery {
-  string transport_status = 1;
+  TransportStatus transport_status = 1;
   HandlingActivity next_expected_activity = 2;
-  google.protobuf.Timestamp eta = 3;
-  HandlingEvent last_event = 4;
+  HandlingEvent last_event = 3;
+  bool is_last_event_expected = 4;
+  string last_known_location = 5;
+  string current_voyage = 6;
+  google.protobuf.Timestamp eta = 7;
+  bool is_misdirected = 8;
+  bool is_unload_at_destination = 9;
 }
 
 enum HandlingEventType {
@@ -60,4 +65,12 @@ message HandlingActivity {
 message HandlingEvent {
   string tracking_id = 1;
   HandlingActivity activity = 2;
+}
+
+enum TransportStatus {
+  NotReceived = 0;
+  InPort = 1;
+  OnboardCarrier = 2;
+  Claimed = 3;
+  Unknown = 4;
 }

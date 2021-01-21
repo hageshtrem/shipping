@@ -16,6 +16,7 @@ type grpcServer struct {
 	pb.UnimplementedBookingServiceServer
 }
 
+// NewServer provides instance of grpc server.
 func NewServer(s Service) pb.BookingServiceServer {
 	return &grpcServer{s, pb.UnimplementedBookingServiceServer{}}
 }
