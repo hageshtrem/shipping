@@ -4,7 +4,6 @@ import (
 	"booking/domain"
 	"booking/pb"
 
-	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -54,20 +53,9 @@ func (es *eventService) DestinationChanged(c *domain.Cargo) error {
 }
 
 func (es *eventService) CargoToRouteAssigned(c *domain.Cargo) error {
-	pbItinerary, err := encodeItinerary(&c.Itinerary)
+	event, err := encodeCargoToRouteAssigned(c)
 	if err != nil {
 		return err
-	}
-
-	pbEta, err := ptypes.TimestampProto(c.Delivery.ETA)
-	if err != nil {
-		return err
-	}
-
-	event := &pb.CargoToRouteAssigned{
-		TrackingId: string(c.TrackingID),
-		Eta:        pbEta,
-		Itinerary:  pbItinerary,
 	}
 
 	return es.eventBus.Publish(event)

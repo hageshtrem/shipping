@@ -26,6 +26,24 @@ func encodeNewCargoBooked(c *domain.Cargo) (*pb.NewCargoBooked, error) {
 	}, nil
 }
 
+func encodeCargoToRouteAssigned(c *domain.Cargo) (*pb.CargoToRouteAssigned, error) {
+	pbItinerary, err := encodeItinerary(&c.Itinerary)
+	if err != nil {
+		return nil, err
+	}
+
+	delivery, err := encodeDelivery(&c.Delivery)
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.CargoToRouteAssigned{
+		TrackingId: string(c.TrackingID),
+		Itinerary:  pbItinerary,
+		Delivery:   delivery,
+	}, nil
+}
+
 func encodeCargoWasHandled(c *domain.Cargo) (*pb.CargoWasHandled, error) {
 	delivery, err := encodeDelivery(&c.Delivery)
 	if err != nil {
@@ -76,9 +94,9 @@ func encodeHandlingActivity(a *domain.HandlingActivity) *pb.HandlingActivity {
 
 func decodeHandlingActivity(activity *handling.Activity) domain.HandlingActivity {
 	return domain.HandlingActivity{
-		Type:         domain.HandlingEventType(activity.Type),
-		Location:     domain.UNLocode(activity.Location),
-		VoyageNumber: domain.VoyageNumber(activity.VoyageNumber),
+		Type:         domain.HandlingEventType(activity.GetType()),
+		Location:     domain.UNLocode(activity.GetLocation()),
+		VoyageNumber: domain.VoyageNumber(activity.GetVoyageNumber()),
 	}
 }
 
@@ -116,4 +134,81 @@ func encodeTransportStatus(ts domain.TransportStatus) pb.TransportStatus {
 	default:
 		return pb.TransportStatus_Unknown
 	}
+}
+
+func encodeItinerary(itinerary *domain.Itinerary) (*pb.Itinerary, error) {
+	pbLegs, err := encodeLegs(itinerary.Legs)
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.Itinerary{Legs: pbLegs}, nil
+}
+
+func decodeItinerary(itinerary *pb.Itinerary) (*domain.Itinerary, error) {
+	legs := make([]domain.Leg, 0, len(itinerary.Legs))
+
+	for _, leg := range itinerary.Legs {
+		loadTime, err := ptypes.Timestamp(leg.LoadTime)
+		if err != nil {
+			return nil, err
+		}
+		unloadTime, err := ptypes.Timestamp(leg.UnloadTime)
+		if err != nil {
+			return nil, err
+		}
+		legs = append(legs, domain.Leg{
+			VoyageNumber:   domain.VoyageNumber(leg.VoyageNumber),
+			LoadLocation:   domain.UNLocode(leg.LoadLocation),
+			UnloadLocation: domain.UNLocode(leg.UnloadLocation),
+			LoadTime:       loadTime,
+			UnloadTime:     unloadTime,
+		})
+	}
+
+	return &domain.Itinerary{Legs: legs}, nil
+}
+
+func encodeLegs(legs []domain.Leg) ([]*pb.Leg, error) {
+	pbLegs := make([]*pb.Leg, 0, len(legs))
+
+	for _, leg := range legs {
+		loadTime, err := ptypes.TimestampProto(leg.LoadTime)
+		if err != nil {
+			return nil, err
+		}
+		unloadTime, err := ptypes.TimestampProto(leg.UnloadTime)
+		if err != nil {
+			return nil, err
+		}
+		pbLegs = append(pbLegs, &pb.Leg{
+			VoyageNumber:   string(leg.VoyageNumber),
+			LoadLocation:   string(leg.LoadLocation),
+			UnloadLocation: string(leg.UnloadLocation),
+			LoadTime:       loadTime,
+			UnloadTime:     unloadTime,
+		})
+	}
+
+	return pbLegs, nil
+}
+
+func encodeCargo(cargo *Cargo) (*pb.Cargo, error) {
+	arrivalDeadline, err := ptypes.TimestampProto(cargo.ArrivalDeadline)
+	if err != nil {
+		return nil, err
+	}
+	pbLegs, err := encodeLegs(cargo.Legs)
+	if err != nil {
+		return nil, err
+	}
+	return &pb.Cargo{
+		ArrivalDeadline: arrivalDeadline,
+		Destination:     cargo.Destination,
+		Legs:            pbLegs,
+		Misrouted:       cargo.Misrouted,
+		Origin:          cargo.Origin,
+		Routed:          cargo.Routed,
+		TrackingId:      cargo.TrackingID,
+	}, nil
 }
