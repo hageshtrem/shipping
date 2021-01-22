@@ -1,6 +1,7 @@
 use super::service::Service;
-use crate::domain::handling::{HandlingEventType, TrackingID, VoyageNumber};
+use crate::domain::handling::{HandlingEventType, TrackingID};
 use crate::domain::location::UNLocode;
+use crate::domain::voyage::VoyageNumber;
 use crate::Error;
 use chrono::prelude::*;
 use std::convert::{TryFrom, TryInto};

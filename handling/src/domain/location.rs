@@ -24,6 +24,10 @@ pub fn store_sample_locations<R: Repository<UNLocode, Location>>(
         un_locode: "SESTO".to_string(),
         name: "Stockholm".to_string(),
     };
+    let SEGOT = &Location {
+        un_locode: "SEGOT".to_string(),
+        name: "Goteborg".to_string(),
+    };
     let AUMEL = &Location {
         un_locode: "AUMEL".to_string(),
         name: "Melbourne".to_string(),
@@ -32,6 +36,14 @@ pub fn store_sample_locations<R: Repository<UNLocode, Location>>(
         un_locode: "CNHKG".to_string(),
         name: "Hongkong".to_string(),
     };
+    let CNSHA = &Location {
+        un_locode: "CNSHA".to_string(),
+        name: "Shanghai".to_string(),
+    };
+    let CNHGH = &Location {
+        un_locode: "CNHGH".to_string(),
+        name: "Hangzhou".to_string(),
+    };
     let USNYC = &Location {
         un_locode: "USNYC".to_string(),
         name: "New York".to_string(),
@@ -39,6 +51,10 @@ pub fn store_sample_locations<R: Repository<UNLocode, Location>>(
     let USCHI = &Location {
         un_locode: "USCHI".to_string(),
         name: "Chicago".to_string(),
+    };
+    let USDAL = &Location {
+        un_locode: "USDAL".to_string(),
+        name: "Dallas".to_string(),
     };
     let JNTKO = &Location {
         un_locode: "JNTKO".to_string(),
@@ -57,10 +73,14 @@ pub fn store_sample_locations<R: Repository<UNLocode, Location>>(
         name: "Helsinki".to_string(),
     };
     repository.store(SESTO.un_locode.clone(), SESTO)?;
+    repository.store(SEGOT.un_locode.clone(), SEGOT)?;
     repository.store(AUMEL.un_locode.clone(), AUMEL)?;
     repository.store(CNHKG.un_locode.clone(), CNHKG)?;
+    repository.store(CNSHA.un_locode.clone(), CNSHA)?;
+    repository.store(CNHGH.un_locode.clone(), CNHGH)?;
     repository.store(USNYC.un_locode.clone(), USNYC)?;
     repository.store(USCHI.un_locode.clone(), USCHI)?;
+    repository.store(USDAL.un_locode.clone(), USDAL)?;
     repository.store(JNTKO.un_locode.clone(), JNTKO)?;
     repository.store(DEHAM.un_locode.clone(), DEHAM)?;
     repository.store(NLRTM.un_locode.clone(), NLRTM)?;

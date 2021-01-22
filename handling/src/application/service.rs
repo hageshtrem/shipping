@@ -1,8 +1,6 @@
 use super::integration_events::EventService;
-use crate::domain::handling::{
-    HandlingEvent, HandlingEventFactory, HandlingEventType, TrackingID, VoyageNumber,
-};
-use crate::domain::{location::UNLocode, Repository};
+use crate::domain::handling::{HandlingEvent, HandlingEventFactory, HandlingEventType, TrackingID};
+use crate::domain::{location::UNLocode, voyage::VoyageNumber, Repository};
 use crate::Error;
 use async_trait::async_trait;
 use chrono::prelude::*;

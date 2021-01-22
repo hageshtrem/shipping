@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 use super::location::{Location, UNLocode};
+use super::voyage::{Voyage, VoyageNumber};
 use super::Repository;
 use crate::Error;
 use chrono::prelude::*;
@@ -89,7 +90,6 @@ where
 }
 
 pub type TrackingID = String;
-pub type VoyageNumber = String;
 
 #[derive(Clone)]
 pub struct Cargo {
@@ -98,6 +98,3 @@ pub struct Cargo {
     pub destination: UNLocode,
     pub arrival_deadline: DateTime<Utc>,
 }
-
-#[derive(Clone)]
-pub struct Voyage {}

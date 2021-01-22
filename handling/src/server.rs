@@ -4,8 +4,8 @@ use handling::application::integration_events::{
 };
 use handling::application::pb::{CargoDestinationChanged, HandlingServiceServer, NewCargoBooked};
 use handling::application::service::ServiceImpl;
-use handling::domain::handling::{Cargo, HandlingEventFactoryImpl, TrackingID, Voyage};
-use handling::domain::{location, Repository};
+use handling::domain::handling::{Cargo, HandlingEventFactoryImpl, TrackingID};
+use handling::domain::{location, voyage};
 use handling::infrastructure::inmem_repository::InmemRepository;
 use handling::infrastructure::rabbitmq_eventbus::{EventBus, SubscribeManager};
 
@@ -39,7 +39,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Dependencies
     let cargos = InmemRepository::new();
     let voyages = InmemRepository::new();
-    voyages.store("v001".to_string(), &Voyage {}).unwrap();
+    voyage::populate_repository(&voyages)?;
     let locations = InmemRepository::new();
     location::store_sample_locations(&locations)?;
     let handling_events = InmemRepository::new();

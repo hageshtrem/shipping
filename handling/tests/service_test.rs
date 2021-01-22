@@ -3,9 +3,9 @@ use chrono::prelude::*;
 use handling::application::integration_events::EventService;
 use handling::application::service::{Service, ServiceImpl};
 use handling::domain::handling::{
-    Cargo, HandlingEvent, HandlingEventFactoryImpl, HandlingEventType, Voyage,
+    Cargo, HandlingEvent, HandlingEventFactoryImpl, HandlingEventType,
 };
-use handling::domain::{location, Repository};
+use handling::domain::{location, voyage, Repository};
 use handling::infrastructure::inmem_repository::InmemRepository;
 use handling::Error;
 
@@ -26,7 +26,7 @@ fn service() {
             )
             .unwrap();
         let voyages = InmemRepository::new();
-        voyages.store("v001".to_string(), &Voyage {}).unwrap();
+        voyage::populate_repository(&voyages).unwrap();
         let locations = InmemRepository::new();
         location::store_sample_locations(&locations).unwrap();
         let handling_events = InmemRepository::new();
@@ -38,7 +38,7 @@ fn service() {
             .register_handling_event(
                 Utc::now(),
                 "001".to_string(),
-                "v001".to_string(),
+                "0100S".to_string(),
                 "SESTO".to_string(),
                 HandlingEventType::Load,
             )

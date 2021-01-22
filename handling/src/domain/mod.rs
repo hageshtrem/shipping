@@ -1,5 +1,6 @@
 pub mod handling;
 pub mod location;
+pub mod voyage;
 
 use crate::Error;
 use std::hash::Hash;
