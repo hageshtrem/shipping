@@ -27,11 +27,15 @@ func NewCargoBookedEventHandler(cargos CargoViewModelRepository) EventHandler {
 func (eh *newCargoBookedEventHandler) Handle(event proto.Message) error {
 	newCargo := event.(*booking.NewCargoBooked)
 	log.Printf("New Cargo booked: %v", newCargo)
+	delivery := newCargo.GetDelivery()
 	cargo := Cargo{
-		TrackingID:      newCargo.GetTrackingId(),
-		Origin:          newCargo.GetOrigin(),
-		Destination:     newCargo.GetDestination(),
-		ArrivalDeadline: newCargo.GetArrivalDeadline().AsTime(),
+		TrackingID:           newCargo.GetTrackingId(),
+		StatusText:           assembleStatusText(delivery),
+		Origin:               newCargo.GetOrigin(),
+		Destination:          newCargo.GetDestination(),
+		ArrivalDeadline:      newCargo.GetArrivalDeadline().AsTime(),
+		ETA:                  delivery.GetEta().AsTime(),
+		NextExpectedActivity: nextExpectedActivity(delivery.GetNextExpectedActivity()),
 	}
 	return eh.cargos.Store(&cargo)
 }
@@ -74,7 +78,8 @@ func (eh *cargoToRouteAssignedEventHandler) Handle(event proto.Message) error {
 		return err
 	}
 
-	c.ETA = e.GetEta().AsTime()
+	fillDeliveryInfo(c, e.GetDelivery())
+
 	return eh.cargos.Store(c)
 }
 
@@ -95,14 +100,16 @@ func (eh *cargoWasHandledEventHandler) Handle(event proto.Message) error {
 		return err
 	}
 
-	delivery := e.GetDelivery()
-
-	c.StatusText = delivery.GetTransportStatus()
-	c.NextExpectedActivity = nextExpectedActivity(delivery.GetNextExpectedActivity())
-	c.ETA = delivery.GetEta().AsTime()
-	c.Events = append(c.Events, assembleEvent(delivery.GetLastEvent()))
+	fillDeliveryInfo(c, e.GetDelivery())
 
 	return eh.cargos.Store(c)
+}
+
+func fillDeliveryInfo(c *Cargo, d *booking.Delivery) {
+	c.StatusText = assembleStatusText(d)
+	c.NextExpectedActivity = nextExpectedActivity(d.GetNextExpectedActivity())
+	c.ETA = d.GetEta().AsTime()
+	c.Events = append(c.Events, assembleEvent(d.GetLastEvent(), d.GetIsLastEventExpected()))
 }
 
 func nextExpectedActivity(activity *booking.HandlingActivity) string {
@@ -120,14 +127,29 @@ func nextExpectedActivity(activity *booking.HandlingActivity) string {
 	return fmt.Sprintf("%s %s cargo in %s.", prefix, strings.ToLower(activity.Type.String()), activity.Location)
 }
 
-func assembleEvent(e *booking.HandlingEvent) Event {
+func assembleStatusText(d *booking.Delivery) string {
+	switch d.TransportStatus {
+	case booking.TransportStatus_NotReceived:
+		return "Not received"
+	case booking.TransportStatus_InPort:
+		return fmt.Sprintf("In port %s", d.GetLastKnownLocation())
+	case booking.TransportStatus_OnboardCarrier:
+		return fmt.Sprintf("Onboard voyage %s", d.GetCurrentVoyage())
+	case booking.TransportStatus_Claimed:
+		return "Claimed"
+	default:
+		return "Unknown"
+	}
+}
+
+func assembleEvent(e *booking.HandlingEvent, isExpected bool) Event {
 	var description string
 
 	switch e.Activity.Type {
 	case booking.HandlingEventType_NotHandled:
 		description = "Cargo has not yet been received."
 	case booking.HandlingEventType_Receive:
-		description = fmt.Sprintf("Received in %s, at %s", e.Activity.Location, time.Now().Format(time.RFC3339))
+		description = fmt.Sprintf("Received in %s, at %s.", e.Activity.Location, time.Now().Format(time.RFC3339))
 	case booking.HandlingEventType_Load:
 		description = fmt.Sprintf("Loaded onto voyage %s in %s, at %s.", e.Activity.VoyageNumber, e.Activity.Location, time.Now().Format(time.RFC3339))
 	case booking.HandlingEventType_Unload:
@@ -142,6 +164,6 @@ func assembleEvent(e *booking.HandlingEvent) Event {
 
 	return Event{
 		Description: description,
-		Expected:    false, // TODO
+		Expected:    isExpected,
 	}
 }

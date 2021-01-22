@@ -40,6 +40,14 @@ func main() {
 		cargo.GetNextExpectedActivity(),
 		cargo.GetArrivalDeadline().AsTime().Format(timeFormat),
 	)
+	fmt.Println("Delivery History:")
+	for _, e := range cargo.Events {
+		expected := "-"
+		if e.Expected {
+			expected = "+"
+		}
+		fmt.Printf("\t%s %s\n", expected, e.Description)
+	}
 }
 
 func checkErr(err error) {
