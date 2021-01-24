@@ -5,9 +5,14 @@ package tracking;
 option go_package = "tracking/pb";
 
 import "google/protobuf/timestamp.proto";
+import "google/api/annotations.proto";
 
 service TrackingService {
-  rpc Track(TrackingID) returns (Cargo) {}
+  rpc Track(TrackingID) returns (Cargo) {
+    option (google.api.http) = {
+      get : "/v1/cargos/{id}"
+    };
+  }
 }
 
 message TrackingID { string id = 1; }

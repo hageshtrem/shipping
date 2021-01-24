@@ -43,3 +43,15 @@ services:
     environment:
       ADDR: "0.0.0.0:5053"
       RABBIT_URI: "amqp://guest:guest@rabbitmq:5672/%2f"
+  apigateway:
+    build: ./apigateway
+    # restart: always
+    depends_on:
+      - booking
+      - tracking
+      - handling
+    ports:
+      - "8080:8080"
+      - "9901:9901"
+    environment:
+      TRACKING_SVC_PORT: "5052"
