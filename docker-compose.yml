@@ -29,7 +29,7 @@ services:
     depends_on:
       - rabbitmq
     ports:
-     - "5052:5052"
+      - "5052:5052"
     environment:
       PORT: ":5052"
       RABBIT_URI: "amqp://guest:guest@rabbitmq:5672/%2f"
@@ -54,4 +54,6 @@ services:
       - "8080:8080"
       - "9901:9901"
     environment:
+      BOOKING_SVC_PORT: "5051"
       TRACKING_SVC_PORT: "5052"
+      HANDLING_SVC_PORT: "5053"

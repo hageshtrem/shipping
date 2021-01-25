@@ -6,10 +6,16 @@ option go_package = "handling/pb";
 
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/empty.proto";
+import "google/api/annotations.proto";
 
 service HandlingService {
   rpc RegisterHandlingEvent(RegisterHandlingEventRequest)
-      returns (google.protobuf.Empty) {}
+      returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post : "/handling/v1/cargos/{id}"
+      body : "*"
+    };
+  }
 }
 
 message RegisterHandlingEventRequest {
