@@ -13,7 +13,7 @@ services:
       - "15672:15672"
   booking:
     build: ./booking
-    restart: always
+    restart: on-failure
     depends_on:
       - pathfinder
       - rabbitmq
@@ -25,7 +25,7 @@ services:
       RABBIT_URI: "amqp://guest:guest@rabbitmq:5672/%2f"
   tracking:
     build: ./tracking
-    restart: always
+    restart: on-failure
     depends_on:
       - rabbitmq
     ports:
@@ -35,7 +35,7 @@ services:
       RABBIT_URI: "amqp://guest:guest@rabbitmq:5672/%2f"
   handling:
     build: ./handling
-    restart: always
+    restart: on-failure
     depends_on:
       - rabbitmq
     ports:
@@ -45,7 +45,6 @@ services:
       RABBIT_URI: "amqp://guest:guest@rabbitmq:5672/%2f"
   apigateway:
     build: ./apigateway
-    # restart: always
     depends_on:
       - booking
       - tracking
@@ -57,3 +56,5 @@ services:
       BOOKING_SVC_PORT: "5051"
       TRACKING_SVC_PORT: "5052"
       HANDLING_SVC_PORT: "5053"
+    # volumes:
+    #   - ./apigateway:/apigateway

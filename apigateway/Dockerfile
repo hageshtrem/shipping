@@ -3,9 +3,10 @@ FROM envoyproxy/envoy:v1.17.0
 RUN apt-get update && \
     apt-get install gettext -y
 
-COPY envoy.yaml /tmp/envoy.yaml.tmpl
-COPY descriptor.pb /tmp/envoy/descriptor.pb
-COPY docker-entrypoint.sh /
+WORKDIR /apigateway
 
-RUN chmod 500 /docker-entrypoint.sh
-ENTRYPOINT ["/docker-entrypoint.sh"]
+COPY envoy.yaml envoy.yaml
+COPY descriptor.pb descriptor.pb
+COPY docker-entrypoint.sh docker-entrypoint.sh
+
+ENTRYPOINT ["./docker-entrypoint.sh"]

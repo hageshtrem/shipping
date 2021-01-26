@@ -47,7 +47,7 @@ static_resources:
                   - name: envoy.filters.http.grpc_json_transcoder
                     typed_config:
                       "@type": type.googleapis.com/envoy.config.filter.http.transcoder.v2.GrpcJsonTranscoder
-                      proto_descriptor: "/tmp/envoy/descriptor.pb"
+                      proto_descriptor: "/apigateway/descriptor.pb"
                       services:
                         [
                           "booking.BookingService",
