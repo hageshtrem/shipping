@@ -1,8 +1,11 @@
-.vscode/*
-booking/pb/*
-pathfinder/pb/*
-tracking/pb/*
-handling/target/*
+.vscode
+booking/pb
+pathfinder/pb
+tracking/pb
+handling/target
 handling/Cargo.lock
-handling/proto/*
+handling/proto
 apigateway/descriptor.pb
+frontend/target
+frontend/pkg
+frontend/Cargo.lock
