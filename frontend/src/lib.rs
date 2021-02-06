@@ -1,4 +1,4 @@
-#![allow(clippy::must_use_candidate)]
+#![allow(clippy::wildcard_imports)]
 
 use seed::{prelude::*, *};
 
@@ -10,6 +10,8 @@ const BOOKING: &str = "booking";
 const TRACKING: &str = "tracking";
 const HANDLING: &str = "handling";
 
+pub(crate) const TRACKING_API_URL: &str = "http://localhost:8080/tracking/v1/cargos/";
+
 // ------ ------
 //     Init
 // ------ ------
@@ -17,11 +19,9 @@ const HANDLING: &str = "handling";
 fn init(url: Url, orders: &mut impl Orders<Msg>) -> Model {
     orders.subscribe(Msg::UrlChanged);
     Model {
-        ctx: Context {
-            tracking_id: "".to_string(),
-        },
+        ctx: Context { tracking_id: None },
         base_url: url.to_base_url(),
-        page: Page::Booking,
+        page: Page::init(url, orders),
     }
 }
 
@@ -38,23 +38,23 @@ struct Model {
 // ------ Context ------
 
 pub struct Context {
-    pub tracking_id: TrackingID,
+    pub tracking_id: Option<String>,
 }
-
-type TrackingID = String;
 
 // ------ Page ------
 
 enum Page {
     Booking,
-    Tracking,
+    Tracking(tracking::Model),
     Handling,
 }
 
 impl Page {
-    fn init(mut url: Url) -> Self {
+    fn init(mut url: Url, orders: &mut impl Orders<Msg>) -> Self {
         match url.next_path_part() {
-            Some(TRACKING) => Self::Tracking,
+            Some(TRACKING) => {
+                Self::Tracking(tracking::init(url, &mut orders.proxy(Msg::TrackingMsg)))
+            }
             Some(HANDLING) => Self::Handling,
             Some(BOOKING) | _ => Self::Booking,
         }
@@ -73,8 +73,8 @@ impl<'a> Urls<'a> {
     pub fn booking(self) -> booking::Urls<'a> {
         booking::Urls::new(self.base_url().add_path_part(BOOKING))
     }
-    pub fn tracking(self) -> tracking::Urls<'a> {
-        tracking::Urls::new(self.base_url().add_path_part(TRACKING))
+    pub fn tracking(self) -> Url {
+        self.base_url().add_path_part(TRACKING)
     }
     pub fn handling(self) -> handling::Urls<'a> {
         handling::Urls::new(self.base_url().add_path_part(HANDLING))
@@ -87,16 +87,15 @@ impl<'a> Urls<'a> {
 
 enum Msg {
     UrlChanged(subs::UrlChanged),
+    TrackingMsg(tracking::Msg),
 }
 
-fn update(msg: Msg, model: &mut Model, _: &mut impl Orders<Msg>) {
+fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg>) {
     match msg {
-        Msg::UrlChanged(subs::UrlChanged(mut url)) => {
-            model.page = match url.next_path_part() {
-                None | Some(BOOKING) => Page::Booking,
-                Some(TRACKING) => Page::Tracking,
-                Some(HANDLING) => Page::Handling,
-                Some(_) => Page::Booking,
+        Msg::UrlChanged(subs::UrlChanged(url)) => model.page = Page::init(url, orders),
+        Msg::TrackingMsg(msg) => {
+            if let Page::Tracking(model) = &mut model.page {
+                tracking::update(msg, model, &mut orders.proxy(Msg::TrackingMsg))
             }
         }
     }
@@ -111,7 +110,7 @@ fn view(model: &Model) -> impl IntoNodes<Msg> {
         header(&model.base_url),
         match &model.page {
             Page::Booking => booking::view(&booking::Model {}),
-            Page::Tracking => tracking::view(&tracking::Model {}),
+            Page::Tracking(model) => tracking::view(model).map_msg(Msg::TrackingMsg),
             Page::Handling => handling::view(&handling::Model {}),
         },
     ]
@@ -125,7 +124,7 @@ fn header(base_url: &Url) -> Node<Msg> {
         ],
         " | ",
         a![
-            attrs! { At::Href => Urls::new(base_url).tracking().base_url() },
+            attrs! { At::Href => Urls::new(base_url).tracking() },
             "Tracking",
         ],
         " | ",
@@ -142,5 +141,6 @@ fn header(base_url: &Url) -> Node<Msg> {
 
 #[wasm_bindgen(start)]
 pub fn start() {
+    console_log::init().expect("error initializing logger");
     App::start("app", init, update, view);
 }
