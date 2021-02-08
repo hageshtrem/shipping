@@ -11,6 +11,7 @@ const TRACKING: &str = "tracking";
 const HANDLING: &str = "handling";
 
 pub(crate) const TRACKING_API_URL: &str = "http://localhost:8080/tracking/v1/cargos/";
+pub(crate) const HANDLING_API_URL: &str = "http://localhost:8080/handling/v1/cargos/";
 
 // ------ ------
 //     Init
@@ -46,7 +47,7 @@ pub struct Context {
 enum Page {
     Booking,
     Tracking(tracking::Model),
-    Handling,
+    Handling(handling::Model),
 }
 
 impl Page {
@@ -55,7 +56,9 @@ impl Page {
             Some(TRACKING) => {
                 Self::Tracking(tracking::init(url, &mut orders.proxy(Msg::TrackingMsg)))
             }
-            Some(HANDLING) => Self::Handling,
+            Some(HANDLING) => {
+                Self::Handling(handling::init(url, &mut orders.proxy(Msg::HandlingMsg)))
+            }
             Some(BOOKING) | _ => Self::Booking,
         }
     }
@@ -76,8 +79,8 @@ impl<'a> Urls<'a> {
     pub fn tracking(self) -> Url {
         self.base_url().add_path_part(TRACKING)
     }
-    pub fn handling(self) -> handling::Urls<'a> {
-        handling::Urls::new(self.base_url().add_path_part(HANDLING))
+    pub fn handling(self) -> Url {
+        self.base_url().add_path_part(HANDLING)
     }
 }
 
@@ -88,6 +91,7 @@ impl<'a> Urls<'a> {
 enum Msg {
     UrlChanged(subs::UrlChanged),
     TrackingMsg(tracking::Msg),
+    HandlingMsg(handling::Msg),
 }
 
 fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg>) {
@@ -96,6 +100,11 @@ fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg>) {
         Msg::TrackingMsg(msg) => {
             if let Page::Tracking(model) = &mut model.page {
                 tracking::update(msg, model, &mut orders.proxy(Msg::TrackingMsg))
+            }
+        }
+        Msg::HandlingMsg(msg) => {
+            if let Page::Handling(model) = &mut model.page {
+                handling::update(msg, model, &mut orders.proxy(Msg::HandlingMsg))
             }
         }
     }
@@ -111,7 +120,7 @@ fn view(model: &Model) -> impl IntoNodes<Msg> {
         match &model.page {
             Page::Booking => booking::view(&booking::Model {}),
             Page::Tracking(model) => tracking::view(model).map_msg(Msg::TrackingMsg),
-            Page::Handling => handling::view(&handling::Model {}),
+            Page::Handling(model) => handling::view(model).map_msg(Msg::HandlingMsg),
         },
     ]
 }
@@ -129,7 +138,7 @@ fn header(base_url: &Url) -> Node<Msg> {
         ],
         " | ",
         a![
-            attrs! { At::Href => Urls::new(base_url).handling().base_url() },
+            attrs! { At::Href => Urls::new(base_url).handling() },
             "Handling",
         ],
     ]
