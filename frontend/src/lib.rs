@@ -10,6 +10,7 @@ const BOOKING: &str = "booking";
 const TRACKING: &str = "tracking";
 const HANDLING: &str = "handling";
 
+pub(crate) const BOOKING_API_URL: &str = "http://localhost:8080/booking/v1/cargos/";
 pub(crate) const TRACKING_API_URL: &str = "http://localhost:8080/tracking/v1/cargos/";
 pub(crate) const HANDLING_API_URL: &str = "http://localhost:8080/handling/v1/cargos/";
 
@@ -20,7 +21,14 @@ pub(crate) const HANDLING_API_URL: &str = "http://localhost:8080/handling/v1/car
 fn init(url: Url, orders: &mut impl Orders<Msg>) -> Model {
     orders.subscribe(Msg::UrlChanged);
     Model {
-        ctx: Context { tracking_id: None },
+        ctx: Context {
+            tracking_id: None,
+            locations: vec![
+                "SESTO", "SEGOT", "AUMEL", "CNHKG", "CNSHA", "CNHGH", "USNYC", "USCHI", "USDAL",
+                "JNTKO", "DEHAM", "NLRTM", "FIHEL",
+            ],
+            voyages: vec!["0100S", "0200T", "0300A", "0301S", "0400S"],
+        },
         base_url: url.to_base_url(),
         page: Page::init(url, orders),
     }
@@ -40,12 +48,14 @@ struct Model {
 
 pub struct Context {
     pub tracking_id: Option<String>,
+    pub locations: Vec<&'static str>,
+    pub voyages: Vec<&'static str>,
 }
 
 // ------ Page ------
 
 enum Page {
-    Booking,
+    Booking(booking::Model),
     Tracking(tracking::Model),
     Handling(handling::Model),
 }
@@ -59,7 +69,9 @@ impl Page {
             Some(HANDLING) => {
                 Self::Handling(handling::init(url, &mut orders.proxy(Msg::HandlingMsg)))
             }
-            Some(BOOKING) | _ => Self::Booking,
+            Some(BOOKING) | _ => {
+                Self::Booking(booking::init(url, &mut orders.proxy(Msg::BookingMsg)))
+            }
         }
     }
 }
@@ -90,6 +102,7 @@ impl<'a> Urls<'a> {
 
 enum Msg {
     UrlChanged(subs::UrlChanged),
+    BookingMsg(booking::Msg),
     TrackingMsg(tracking::Msg),
     HandlingMsg(handling::Msg),
 }
@@ -97,6 +110,11 @@ enum Msg {
 fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg>) {
     match msg {
         Msg::UrlChanged(subs::UrlChanged(url)) => model.page = Page::init(url, orders),
+        Msg::BookingMsg(msg) => {
+            if let Page::Booking(model) = &mut model.page {
+                booking::update(msg, model, &mut orders.proxy(Msg::BookingMsg))
+            }
+        }
         Msg::TrackingMsg(msg) => {
             if let Page::Tracking(model) = &mut model.page {
                 tracking::update(msg, model, &mut orders.proxy(Msg::TrackingMsg))
@@ -118,9 +136,15 @@ fn view(model: &Model) -> impl IntoNodes<Msg> {
     vec![
         header(&model.base_url),
         match &model.page {
-            Page::Booking => booking::view(&booking::Model {}),
-            Page::Tracking(model) => tracking::view(model).map_msg(Msg::TrackingMsg),
-            Page::Handling(model) => handling::view(model).map_msg(Msg::HandlingMsg),
+            Page::Booking(booking_model) => {
+                booking::view(booking_model, &model.ctx).map_msg(Msg::BookingMsg)
+            }
+            Page::Tracking(tracking_model) => {
+                tracking::view(tracking_model).map_msg(Msg::TrackingMsg)
+            }
+            Page::Handling(handling_model) => {
+                handling::view(handling_model, &model.ctx).map_msg(Msg::HandlingMsg)
+            }
         },
     ]
 }
@@ -128,7 +152,7 @@ fn view(model: &Model) -> impl IntoNodes<Msg> {
 fn header(base_url: &Url) -> Node<Msg> {
     nav![
         a![
-            attrs! { At::Href => Urls::new(base_url).booking().base_url() },
+            attrs! { At::Href => Urls::new(base_url).booking().default() },
             "Booking",
         ],
         " | ",

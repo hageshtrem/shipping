@@ -60,64 +60,71 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg>) {
     }
 }
 
-pub fn view(model: &Model) -> Node<Msg> {
-    let locations = vec![
-        "SESTO", "SEGOT", "AUMEL", "CNHKG", "CNSHA", "CNHGH", "USNYC", "USCHI", "USDAL", "JNTKO",
-        "DEHAM", "NLRTM", "FIHEL",
-    ];
-    let voyages = vec!["0100S", "0200T", "0300A", "0301S", "0400S"];
+pub fn view(model: &Model, context: &crate::Context) -> Node<Msg> {
     div![
         h1!["Incident Logging Application"],
         form![
-            label!["Time: "],
-            input![
-                attrs! {
-                    At::Type => "datetime-local",
-                    At::Value => model.event.completed,
-                },
-                input_ev(Ev::Input, Msg::DateTimeChanged)
+            div![
+                label!["Time: "],
+                input![
+                    attrs! {
+                        At::Type => "datetime-local",
+                        At::Value => model.event.completed,
+                    },
+                    input_ev(Ev::Input, Msg::DateTimeChanged)
+                ],
             ],
-            label!["Tracking ID: "],
-            input![
-                attrs! {
-                    At::Value => model.event.id,
-                },
-                input_ev(Ev::Input, Msg::TrackingIDChanged)
+            div![
+                label!["Tracking ID: "],
+                input![
+                    attrs! {
+                        At::Value => model.event.id,
+                    },
+                    input_ev(Ev::Input, Msg::TrackingIDChanged)
+                ],
             ],
-            label!["Voyage: "],
-            select![
-                option![attrs! {At::Value => AtValue::None}, "----"],
-                voyages
-                    .iter()
-                    .map(|code| option![attrs! {At::Value => code}, code]),
-                input_ev(Ev::Input, Msg::VoyageCanged)
+            div![
+                label!["Voyage: "],
+                select![
+                    option![attrs! {At::Value => AtValue::None}, "----"],
+                    context
+                        .voyages
+                        .iter()
+                        .map(|code| option![attrs! {At::Value => code}, code]),
+                    input_ev(Ev::Input, Msg::VoyageCanged)
+                ],
             ],
-            label!["Location: "],
-            select![
-                option![attrs! {At::Value => AtValue::None}, "----"],
-                locations
-                    .iter()
-                    .map(|loc| option![attrs! {At::Value => loc}, loc]),
-                input_ev(Ev::Input, Msg::LocationChanged)
+            div![
+                label!["Location: "],
+                select![
+                    option![attrs! {At::Value => AtValue::None}, "----"],
+                    context
+                        .locations
+                        .iter()
+                        .map(|loc| option![attrs! {At::Value => loc}, loc]),
+                    input_ev(Ev::Input, Msg::LocationChanged)
+                ],
             ],
-            label!["Event Type: "],
-            select![
-                option![attrs! {At::Value => AtValue::None}, "----"],
-                option![attrs! {At::Value => "NotHandled"}, "NotHandled"],
-                option![attrs! {At::Value => "Receive"}, "Receive"],
-                option![attrs! {At::Value => "Load"}, "Load"],
-                option![attrs! {At::Value => "Unload"}, "Unload"],
-                option![attrs! {At::Value => "Claim"}, "Claim"],
-                option![attrs! {At::Value => "Customs"}, "Customs"],
-                input_ev(Ev::Input, Msg::EventTypeChanged),
+            div![
+                label!["Event Type: "],
+                select![
+                    option![attrs! {At::Value => AtValue::None}, "----"],
+                    option![attrs! {At::Value => "NotHandled"}, "NotHandled"],
+                    option![attrs! {At::Value => "Receive"}, "Receive"],
+                    option![attrs! {At::Value => "Load"}, "Load"],
+                    option![attrs! {At::Value => "Unload"}, "Unload"],
+                    option![attrs! {At::Value => "Claim"}, "Claim"],
+                    option![attrs! {At::Value => "Customs"}, "Customs"],
+                    input_ev(Ev::Input, Msg::EventTypeChanged),
+                ],
             ],
-            button![
+            div![button![
                 "Register",
                 ev(Ev::Click, |event| {
                     event.prevent_default();
                     Msg::Register
                 })
-            ],
+            ],],
         ]
     ]
 }
