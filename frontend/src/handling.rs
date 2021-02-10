@@ -1,6 +1,7 @@
 use log::{error, info};
 use seed::{prelude::*, *};
 use serde::Serialize;
+use serde_json::Value;
 
 pub fn init(_: Url, _: &mut impl Orders<Msg>) -> Model {
     Model {
@@ -23,7 +24,7 @@ pub struct Event {
 
 pub enum Msg {
     Register,
-    Fetched(fetch::Result<()>),
+    Fetched(fetch::Result<Value>),
     DateTimeChanged(String),
     TrackingIDChanged(String),
     VoyageCanged(String),
@@ -34,7 +35,7 @@ pub enum Msg {
 pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg>) {
     match msg {
         Msg::Register => {
-            async fn send_message(event: Event) -> fetch::Result<()> {
+            async fn send_message(event: Event) -> fetch::Result<Value> {
                 Request::new(format!("{}{}", crate::HANDLING_API_URL, event.id))
                     .method(Method::Post)
                     .json(&event)?
