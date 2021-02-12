@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 const ALL_CARGOS: &str = "cargo";
+const CARGO_DETAILS: &str = "details";
 const NEW_CARGO: &str = "new";
 
 pub fn init(url: Url, orders: &mut impl Orders<Msg>) -> Model {
@@ -35,15 +36,20 @@ pub struct Model {
 #[derive(Debug)]
 enum Page {
     ListAllCargos,
+    Details(String),
     NewCargo,
 }
 
 impl Page {
     fn init(mut url: Url) -> Self {
-        match url.remaining_path_parts().last() {
-            Some(&NEW_CARGO) => Self::NewCargo,
-            Some(&ALL_CARGOS) | None => Self::ListAllCargos,
-            Some(_) => Self::ListAllCargos,
+        match url.remaining_path_parts().as_slice() {
+            [crate::BOOKING, NEW_CARGO] => Self::NewCargo,
+            [crate::BOOKING, CARGO_DETAILS, id @ _] => {
+                info!("{}", id);
+                Self::Details(id.to_string())
+            }
+            [crate::BOOKING, ALL_CARGOS] => Self::ListAllCargos,
+            [] | [..] => Self::ListAllCargos,
         }
     }
 }
@@ -54,7 +60,7 @@ pub struct Data {
 }
 
 #[allow(non_snake_case)]
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct Cargo {
     trackingId: String,
     origin: String,
@@ -66,7 +72,7 @@ pub struct Cargo {
 }
 
 #[allow(non_snake_case)]
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct Leg {
     voyageNumber: String,
     loadLocation: String,
@@ -90,6 +96,11 @@ impl<'a> Urls<'a> {
     }
     pub fn all_cargos(self) -> Url {
         self.base_url().add_path_part(ALL_CARGOS)
+    }
+    pub fn details(self, id: &str) -> Url {
+        self.base_url()
+            .add_path_part(CARGO_DETAILS)
+            .add_path_part(id)
     }
     pub fn new_cargo(self) -> Url {
         self.base_url().add_path_part(NEW_CARGO)
@@ -183,14 +194,26 @@ pub fn view(model: &Model, context: &crate::Context) -> Node<Msg> {
                 "Book new cargo",
             ],
         ],
-        match model.page {
-            Page::ListAllCargos => list_all_cargos_view(cargos),
+        match &model.page {
+            Page::ListAllCargos => list_all_cargos_view(&model.base_url, cargos),
+            Page::Details(id) => {
+                if let Some(data) = &model.cargos {
+                    if let Some(cargo) = data.cargos.iter().by_ref().find(|&c| c.trackingId == *id)
+                    {
+                        details_of_cargo_view(cargo)
+                    } else {
+                        div!["Unknown cargo"]
+                    }
+                } else {
+                    div!["Unknown cargo"]
+                }
+            }
             Page::NewCargo => new_cargo_view(model.new_cargo.as_ref(), context),
         },
     ]
 }
 
-fn list_all_cargos_view(cargos: &Vec<Cargo>) -> Node<Msg> {
+fn list_all_cargos_view(base_url: &Url, cargos: &Vec<Cargo>) -> Node<Msg> {
     div![table![
         tr![
             th!["Tracking ID"],
@@ -200,7 +223,10 @@ fn list_all_cargos_view(cargos: &Vec<Cargo>) -> Node<Msg> {
         ],
         cargos.iter().map(|elem| {
             tr![
-                td![elem.trackingId.clone()],
+                td![a![
+                    attrs! { At::Href => Urls::new(base_url.clone()).details(&elem.trackingId) },
+                    elem.trackingId.clone(),
+                ],],
                 td![elem.origin.clone()],
                 td![elem.destination.clone()],
                 td![elem.routed.to_string()],
@@ -255,5 +281,37 @@ fn new_cargo_view(new_cargo_model: Option<&NewCargo>, context: &crate::Context) 
                 })
             ],],
         ]
+    ]
+}
+
+fn details_of_cargo_view(cargo: &Cargo) -> Node<Msg> {
+    div![
+        h2![format!("Details for cargo {}", cargo.trackingId)],
+        div!["Origin ", *cargo.origin],
+        div!["Destination ", *cargo.destination],
+        div![a!["Change destination"]],
+        div!["Arrival deadline ", *cargo.arrivalDeadline],
+        div![if cargo.routed {
+            table![
+                tr![
+                    th!["Voyage number"],
+                    th!["Load"],
+                    th!["Load Time"],
+                    th!["Unload"],
+                    th!["Unload Time"],
+                ],
+                cargo.legs.iter().map(|leg| {
+                    tr![
+                        td![*leg.voyageNumber],
+                        td![*leg.loadLocation],
+                        td![*leg.loadTime],
+                        td![*leg.unloadLocation],
+                        td![*leg.unloadTime],
+                    ]
+                })
+            ]
+        } else {
+            div!["Not routed - ", a!["Route this cargo"]]
+        }]
     ]
 }
