@@ -69,29 +69,47 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg>) {
 
 pub fn view(model: &Model) -> Node<Msg> {
     div![
-        h1!["Tracking ID:"],
-        form![
-            input![
-                attrs! {
-                    At::Value => model.tracking_id
-                },
-                input_ev(Ev::Input, Msg::TrackingIDChanged),
-                // ev(Ev::Change, |_| Msg::Track),
-            ],
-            button![
-                "Track!",
-                ev(Ev::Click, |event| {
-                    event.prevent_default();
-                    Msg::Track
-                })
-            ],
+        section![
+            C!["section"],
+            h1![C!["title"], "Tracking"],
+            form![
+                C!["form"],
+                div![
+                    C!["field", "has-addons"],
+                    div![
+                        C!["control"],
+                        input![
+                            C!["input"],
+                            attrs! {
+                                At::Value => model.tracking_id
+                            },
+                            input_ev(Ev::Input, Msg::TrackingIDChanged),
+                        ]
+                    ],
+                    div![
+                        C!["control"],
+                        button![
+                            C!["button"],
+                            "Track!",
+                            ev(Ev::Click, |event| {
+                                event.prevent_default();
+                                Msg::Track
+                            })
+                        ]
+                    ]
+                ]
+            ]
         ],
-        IF!(model.cargo.is_some() => view_cargo(model.cargo.as_ref().unwrap()))
+        section![
+            C!["section"],
+            IF!(model.cargo.is_some() => view_cargo(model.cargo.as_ref().unwrap()))
+        ]
     ]
 }
 
 fn view_cargo(cargo: &Cargo) -> Node<Msg> {
     div![
+        C!["content"],
         p![format!(
             "Cargo {} is now: {}",
             cargo.trackingId, cargo.statusText

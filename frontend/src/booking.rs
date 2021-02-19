@@ -301,41 +301,47 @@ pub fn view(model: &Model, context: &crate::Context) -> Node<Msg> {
     let default = &Data { cargos: vec![] };
     let cargos = &model.cargos.as_ref().unwrap_or(default).cargos;
     div![
-        h1![C!["title"], "Cargo Booking and Routing"],
-        div![
-            C!["columns"],
+        section![
+            C!["section"],
+            h1![C!["title"], "Cargo Booking and Routing"],
             div![
-                C!["column", "is-2"],
-                a![
-                    attrs! { At::Href => Urls::new(model.base_url.clone()).all_cargos() },
-                    "List all cargos",
-                ]
-            ],
-            div![
-                C!["column", "is-2"],
-                a![
-                    attrs! { At::Href => Urls::new(model.base_url.clone()).new_cargo() },
-                    "Book new cargo",
+                C!["columns"],
+                div![
+                    C!["column", "is-2"],
+                    a![
+                        attrs! { At::Href => Urls::new(model.base_url.clone()).all_cargos() },
+                        "List all cargos",
+                    ]
+                ],
+                div![
+                    C!["column", "is-2"],
+                    a![
+                        attrs! { At::Href => Urls::new(model.base_url.clone()).new_cargo() },
+                        "Book new cargo",
+                    ]
                 ]
             ]
         ],
-        match &model.page {
-            Page::ListAllCargos => list_all_cargos_view(&model.base_url, cargos),
-            Page::Details(id) => {
-                if let Some(cargo) = model
-                    .cargos
-                    .as_ref()
-                    .and_then(|data| data.get_cargo_by_id(id))
-                {
-                    details_of_cargo_view(&model.base_url, cargo)
-                } else {
-                    empty![]
+        section![
+            C!["section"],
+            match &model.page {
+                Page::ListAllCargos => list_all_cargos_view(&model.base_url, cargos),
+                Page::Details(id) => {
+                    if let Some(cargo) = model
+                        .cargos
+                        .as_ref()
+                        .and_then(|data| data.get_cargo_by_id(id))
+                    {
+                        details_of_cargo_view(&model.base_url, cargo)
+                    } else {
+                        empty![]
+                    }
                 }
+                Page::Route(id) => route_cargo_view(model, id),
+                Page::ChangeDestination(id) => change_destination_view(id, context),
+                Page::NewCargo => new_cargo_view(model.new_cargo.as_ref(), context),
             }
-            Page::Route(id) => route_cargo_view(model, id),
-            Page::ChangeDestination(id) => change_destination_view(id, context),
-            Page::NewCargo => new_cargo_view(model.new_cargo.as_ref(), context),
-        },
+        ]
     ]
 }
 
@@ -381,7 +387,7 @@ fn new_cargo_view(new_cargo_model: Option<&NewCargo>, context: &crate::Context) 
                     C!["field"],
                     label![C!["label"], "Origin"],
                     div![
-                        C!["control", "is-expanded"],
+                        C!["control"],
                         div![
                             C!["select", "is-fullwidth"],
                             select![
@@ -399,7 +405,7 @@ fn new_cargo_view(new_cargo_model: Option<&NewCargo>, context: &crate::Context) 
                     C!["field"],
                     label![C!["label"], "Destination"],
                     div![
-                        C!["control", "is-expanded"],
+                        C!["control"],
                         div![
                             C!["select", "is-fullwidth"],
                             select![
@@ -417,7 +423,7 @@ fn new_cargo_view(new_cargo_model: Option<&NewCargo>, context: &crate::Context) 
                     C!["field"],
                     label![C!["label"], "Arrival deadline"],
                     div![
-                        C!["control", "is-expanded"],
+                        C!["control"],
                         input![
                             C!["input"],
                             attrs! {

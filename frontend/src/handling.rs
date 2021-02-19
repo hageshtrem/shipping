@@ -62,70 +62,113 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg>) {
 }
 
 pub fn view(model: &Model, context: &crate::Context) -> Node<Msg> {
-    div![
-        h1!["Incident Logging Application"],
-        form![
-            div![
-                label!["Time: "],
-                input![
-                    attrs! {
-                        At::Type => "datetime-local",
-                        At::Value => model.event.completed,
-                    },
-                    input_ev(Ev::Input, Msg::DateTimeChanged)
+    section![
+        C!["section"],
+        h1![C!["title"], "Incident Logging Application"],
+        div![
+            C!["column", "is-4"],
+            form![
+                C!["form"],
+                div![
+                    C!["field"],
+                    div![
+                        C!["control"],
+                        label![C!["label"], "Time"],
+                        input![
+                            C!["input"],
+                            attrs! {
+                                At::Type => "datetime-local",
+                                At::Value => model.event.completed,
+                            },
+                            input_ev(Ev::Input, Msg::DateTimeChanged)
+                        ]
+                    ]
                 ],
-            ],
-            div![
-                label!["Tracking ID: "],
-                input![
-                    attrs! {
-                        At::Value => model.event.id,
-                    },
-                    input_ev(Ev::Input, Msg::TrackingIDChanged)
+                div![
+                    C!["field"],
+                    div![
+                        C!["control"],
+                        label![C!["label"], "Tracking ID"],
+                        input![
+                            C!["input"],
+                            attrs! {
+                                At::Value => model.event.id,
+                            },
+                            input_ev(Ev::Input, Msg::TrackingIDChanged)
+                        ]
+                    ]
                 ],
-            ],
-            div![
-                label!["Voyage: "],
-                select![
-                    option![attrs! {At::Value => AtValue::None}, "----"],
-                    context
-                        .voyages
-                        .iter()
-                        .map(|code| option![attrs! {At::Value => code}, code]),
-                    input_ev(Ev::Input, Msg::VoyageCanged)
+                div![
+                    C!["field"],
+                    div![
+                        C!["control"],
+                        label![C!["label"], "Voyage"],
+                        div![
+                            C!["select", "is-fullwidth"],
+                            select![
+                                option![attrs! {At::Value => AtValue::None}, "----"],
+                                context
+                                    .voyages
+                                    .iter()
+                                    .map(|code| option![attrs! {At::Value => code}, code]),
+                                input_ev(Ev::Input, Msg::VoyageCanged)
+                            ]
+                        ]
+                    ]
                 ],
-            ],
-            div![
-                label!["Location: "],
-                select![
-                    option![attrs! {At::Value => AtValue::None}, "----"],
-                    context
-                        .locations
-                        .iter()
-                        .map(|loc| option![attrs! {At::Value => loc}, loc]),
-                    input_ev(Ev::Input, Msg::LocationChanged)
+                div![
+                    C!["field"],
+                    div![
+                        C!["control"],
+                        label![C!["label"], "Location"],
+                        div![
+                            C!["select", "is-fullwidth"],
+                            select![
+                                option![attrs! {At::Value => AtValue::None}, "----"],
+                                context
+                                    .locations
+                                    .iter()
+                                    .map(|loc| option![attrs! {At::Value => loc}, loc]),
+                                input_ev(Ev::Input, Msg::LocationChanged)
+                            ]
+                        ]
+                    ]
                 ],
-            ],
-            div![
-                label!["Event Type: "],
-                select![
-                    option![attrs! {At::Value => AtValue::None}, "----"],
-                    option![attrs! {At::Value => "NotHandled"}, "NotHandled"],
-                    option![attrs! {At::Value => "Receive"}, "Receive"],
-                    option![attrs! {At::Value => "Load"}, "Load"],
-                    option![attrs! {At::Value => "Unload"}, "Unload"],
-                    option![attrs! {At::Value => "Claim"}, "Claim"],
-                    option![attrs! {At::Value => "Customs"}, "Customs"],
-                    input_ev(Ev::Input, Msg::EventTypeChanged),
+                div![
+                    C!["field"],
+                    div![
+                        C!["control"],
+                        label![C!["label"], "Event Type"],
+                        div![
+                            C!["select", "is-fullwidth"],
+                            select![
+                                option![attrs! {At::Value => AtValue::None}, "----"],
+                                option![attrs! {At::Value => "NotHandled"}, "NotHandled"],
+                                option![attrs! {At::Value => "Receive"}, "Receive"],
+                                option![attrs! {At::Value => "Load"}, "Load"],
+                                option![attrs! {At::Value => "Unload"}, "Unload"],
+                                option![attrs! {At::Value => "Claim"}, "Claim"],
+                                option![attrs! {At::Value => "Customs"}, "Customs"],
+                                input_ev(Ev::Input, Msg::EventTypeChanged),
+                            ]
+                        ]
+                    ]
                 ],
-            ],
-            div![button![
-                "Register",
-                ev(Ev::Click, |event| {
-                    event.prevent_default();
-                    Msg::Register
-                })
-            ],],
+                div![
+                    C!["field"],
+                    div![
+                        C!["control"],
+                        button![
+                            C!["button"],
+                            "Register",
+                            ev(Ev::Click, |event| {
+                                event.prevent_default();
+                                Msg::Register
+                            })
+                        ]
+                    ]
+                ]
+            ]
         ]
     ]
 }
