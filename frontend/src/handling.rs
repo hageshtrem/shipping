@@ -6,11 +6,13 @@ use serde_json::Value;
 pub fn init(_: Url, _: &mut impl Orders<Msg>) -> Model {
     Model {
         event: Event::default(),
+        registered: false,
     }
 }
 
 pub struct Model {
     event: Event,
+    registered: bool,
 }
 
 #[derive(Default, Serialize, Clone)]
@@ -24,6 +26,7 @@ pub struct Event {
 
 pub enum Msg {
     Register,
+    RemoveNotificationMsg,
     Fetched(fetch::Result<Value>),
     DateTimeChanged(String),
     TrackingIDChanged(String),
@@ -51,7 +54,15 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg>) {
                 .skip()
                 .perform_cmd(async { Msg::Fetched(send_message(e).await) });
         }
-        Msg::Fetched(Ok(_)) => info!("Registered!"),
+        Msg::RemoveNotificationMsg => model.registered = false,
+        Msg::Fetched(Ok(_)) => {
+            model.registered = true;
+            model.event = Event {
+                id: model.event.id.clone(),
+                ..Default::default()
+            };
+            info!("Registered!")
+        }
         Msg::Fetched(Err(err)) => error!("{:?}", err),
         Msg::DateTimeChanged(datetime) => model.event.completed = datetime,
         Msg::TrackingIDChanged(id) => model.event.id = id,
@@ -168,7 +179,14 @@ pub fn view(model: &Model, context: &crate::Context) -> Node<Msg> {
                         ]
                     ]
                 ]
-            ]
+            ],
+            IF!(model.registered => div![
+                C!["notification"],
+                button![C!["delete"],
+                ev(Ev::Click, |_| Msg::RemoveNotificationMsg)
+                ],
+                "Successfully registered!"
+            ])
         ]
     ]
 }
