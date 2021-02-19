@@ -135,37 +135,45 @@ fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg>) {
 fn view(model: &Model) -> impl IntoNodes<Msg> {
     vec![
         header(&model.base_url),
-        match &model.page {
-            Page::Booking(booking_model) => {
-                booking::view(booking_model, &model.ctx).map_msg(Msg::BookingMsg)
-            }
-            Page::Tracking(tracking_model) => {
-                tracking::view(tracking_model).map_msg(Msg::TrackingMsg)
-            }
-            Page::Handling(handling_model) => {
-                handling::view(handling_model, &model.ctx).map_msg(Msg::HandlingMsg)
-            }
-        },
+        div![
+            C!["container"],
+            match &model.page {
+                Page::Booking(booking_model) => {
+                    booking::view(booking_model, &model.ctx).map_msg(Msg::BookingMsg)
+                }
+                Page::Tracking(tracking_model) => {
+                    tracking::view(tracking_model).map_msg(Msg::TrackingMsg)
+                }
+                Page::Handling(handling_model) => {
+                    handling::view(handling_model, &model.ctx).map_msg(Msg::HandlingMsg)
+                }
+            },
+        ],
     ]
 }
 
 fn header(base_url: &Url) -> Node<Msg> {
-    nav![
-        a![
-            attrs! { At::Href => Urls::new(base_url).booking().default() },
-            "Booking",
-        ],
-        " | ",
-        a![
-            attrs! { At::Href => Urls::new(base_url).tracking() },
-            "Tracking",
-        ],
-        " | ",
-        a![
-            attrs! { At::Href => Urls::new(base_url).handling() },
-            "Handling",
-        ],
-    ]
+    nav![div![
+        C!["navbar-menu"],
+        div![
+            C!["navbar-start"],
+            a![
+                C!["navbar-item"],
+                attrs! { At::Href => Urls::new(base_url).booking().default() },
+                "Booking",
+            ],
+            a![
+                C!["navbar-item"],
+                attrs! { At::Href => Urls::new(base_url).tracking() },
+                "Tracking",
+            ],
+            a![
+                C!["navbar-item"],
+                attrs! { At::Href => Urls::new(base_url).handling() },
+                "Handling",
+            ]
+        ]
+    ]]
 }
 
 // ------ ------

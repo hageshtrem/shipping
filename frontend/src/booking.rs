@@ -301,20 +301,23 @@ pub fn view(model: &Model, context: &crate::Context) -> Node<Msg> {
     let default = &Data { cargos: vec![] };
     let cargos = &model.cargos.as_ref().unwrap_or(default).cargos;
     div![
-        h1!["Cargo Booking and Routing"],
+        h1![C!["title"], "Cargo Booking and Routing"],
         div![
-            style! {
-                St::Display => "inline",
-            },
-            a![
-                attrs! { At::Href => Urls::new(model.base_url.clone()).all_cargos() },
-                "List all cargos",
+            C!["columns"],
+            div![
+                C!["column", "is-2"],
+                a![
+                    attrs! { At::Href => Urls::new(model.base_url.clone()).all_cargos() },
+                    "List all cargos",
+                ]
             ],
-            "    ",
-            a![
-                attrs! { At::Href => Urls::new(model.base_url.clone()).new_cargo() },
-                "Book new cargo",
-            ],
+            div![
+                C!["column", "is-2"],
+                a![
+                    attrs! { At::Href => Urls::new(model.base_url.clone()).new_cargo() },
+                    "Book new cargo",
+                ]
+            ]
         ],
         match &model.page {
             Page::ListAllCargos => list_all_cargos_view(&model.base_url, cargos),
@@ -337,14 +340,15 @@ pub fn view(model: &Model, context: &crate::Context) -> Node<Msg> {
 }
 
 fn list_all_cargos_view(base_url: &Url, cargos: &Vec<Cargo>) -> Node<Msg> {
-    div![table![
-        tr![
+    table![
+        C!["table"],
+        thead![tr![
             th!["Tracking ID"],
             th!["Origin"],
             th!["Destination"],
             th!["Routed"]
-        ],
-        cargos.iter().map(|elem| {
+        ]],
+        tbody![cargos.iter().map(|elem| {
             tr![
                 td![a![
                     attrs! { At::Href => Urls::new(base_url.clone()).details(&elem.trackingId) },
@@ -352,71 +356,120 @@ fn list_all_cargos_view(base_url: &Url, cargos: &Vec<Cargo>) -> Node<Msg> {
                 ],],
                 td![elem.origin.clone()],
                 td![elem.destination.clone()],
-                td![elem.routed.to_string()],
+                td![span![
+                    C!["icon"],
+                    if elem.routed {
+                        i![C!["fas", "fa-check-circle"]]
+                    } else {
+                        i![C!["fas", "fa-circle"]]
+                    }
+                ]]
             ]
-        }),
-    ]]
+        })]
+    ]
 }
 
 fn new_cargo_view(new_cargo_model: Option<&NewCargo>, context: &crate::Context) -> Node<Msg> {
     let default = &NewCargo::default();
     let new_cargo_model = new_cargo_model.unwrap_or(default);
     div![
-        h2!["Book new cargo"],
-        form![
-            div![
-                label!["Origin"],
-                select![
-                    option![attrs! {At::Value => AtValue::None}, "----"],
-                    context
-                        .locations
-                        .iter()
-                        .map(|loc| option![attrs! {At::Value => loc}, loc]),
-                    input_ev(Ev::Input, Msg::NewCargoOriginChanged),
+        h2![C!["subtitle"], "Book new cargo"],
+        div![
+            C!["column", "is-4"],
+            form![
+                div![
+                    C!["field"],
+                    label![C!["label"], "Origin"],
+                    div![
+                        C!["control", "is-expanded"],
+                        div![
+                            C!["select", "is-fullwidth"],
+                            select![
+                                option![attrs! {At::Value => AtValue::None}, "----"],
+                                context
+                                    .locations
+                                    .iter()
+                                    .map(|loc| option![attrs! {At::Value => loc}, loc]),
+                                input_ev(Ev::Input, Msg::NewCargoOriginChanged),
+                            ]
+                        ]
+                    ]
                 ],
-            ],
-            div![
-                label!["Destination"],
-                select![
-                    option![attrs! {At::Value => AtValue::None}, "----"],
-                    context
-                        .locations
-                        .iter()
-                        .map(|loc| option![attrs! {At::Value => loc}, loc]),
-                    input_ev(Ev::Input, Msg::NewCargoDestinationChanged)
+                div![
+                    C!["field"],
+                    label![C!["label"], "Destination"],
+                    div![
+                        C!["control", "is-expanded"],
+                        div![
+                            C!["select", "is-fullwidth"],
+                            select![
+                                option![attrs! {At::Value => AtValue::None}, "----"],
+                                context
+                                    .locations
+                                    .iter()
+                                    .map(|loc| option![attrs! {At::Value => loc}, loc]),
+                                input_ev(Ev::Input, Msg::NewCargoDestinationChanged)
+                            ]
+                        ]
+                    ]
                 ],
-            ],
-            div![
-                label!["Arrival deadline"],
-                input![
-                    attrs! {
-                        At::Type => "datetime-local",
-                        At::Value => new_cargo_model.deadline,
-                    },
-                    input_ev(Ev::Input, Msg::NewCargoArrivalDeadlineChanged)
+                div![
+                    C!["field"],
+                    label![C!["label"], "Arrival deadline"],
+                    div![
+                        C!["control", "is-expanded"],
+                        input![
+                            C!["input"],
+                            attrs! {
+                                At::Type => "datetime-local",
+                                At::Value => new_cargo_model.deadline,
+                            },
+                            input_ev(Ev::Input, Msg::NewCargoArrivalDeadlineChanged)
+                        ]
+                    ]
                 ],
-            ],
-            div![button![
-                "Book",
-                ev(Ev::Click, |event| {
-                    event.prevent_default();
-                    Msg::Book
-                })
-            ],],
+                div![
+                    C!["field"],
+                    div![
+                        C!["control"],
+                        button![
+                            C!["button"],
+                            "Book",
+                            ev(Ev::Click, |event| {
+                                event.prevent_default();
+                                Msg::Book
+                            })
+                        ]
+                    ]
+                ]
+            ]
         ]
     ]
 }
 
 fn details_of_cargo_view(base_url: &Url, cargo: &Cargo) -> Node<Msg> {
     div![
-        h2![format!("Details for cargo {}", cargo.trackingId)],
-        div!["Origin ", *cargo.origin],
-        div!["Destination ", *cargo.destination],
-        div![a![
-            attrs! { At::Href => Urls::new(base_url.clone()).destination(&cargo.trackingId) },
-            "Change destination"
-        ]],
-        div!["Arrival deadline ", *cargo.arrivalDeadline],
+        h2![
+            C!["subtitle"],
+            format!("Details for cargo {}", cargo.trackingId)
+        ],
+        table![
+            C!["table"],
+            tbody![
+                tr![td!["Origin"], td![*cargo.origin]],
+                tr![
+                    td!["Destination"],
+                    td![
+                        div![*cargo.destination],
+                        div![a![
+                            attrs! { At::Href => Urls::new(base_url.clone()).destination(&cargo.trackingId) },
+                            "Change destination"
+                        ]]
+                    ]
+                ],
+                tr![td!["Arrival deadline"], td![*cargo.arrivalDeadline]]
+            ]
+        ],
         div![if cargo.routed {
             itinerary_view(cargo.legs.as_ref())
         } else {
@@ -433,7 +486,7 @@ fn details_of_cargo_view(base_url: &Url, cargo: &Cargo) -> Node<Msg> {
 
 fn route_cargo_view(model: &Model, id: &str) -> Node<Msg> {
     div![
-        h2!["Select route"],
+        h2![C!["subtitle"], "Select route"],
         if let Some(cargo) = model
             .cargos
             .as_ref()
@@ -450,6 +503,7 @@ fn route_cargo_view(model: &Model, id: &str) -> Node<Msg> {
                             div![itinerary_view(itinerary.legs.as_ref()), {
                                 let id = id.to_string();
                                 button![
+                                    C!["button"],
                                     "Assign cargo to this route",
                                     ev(Ev::Click, move |_| Msg::AssignCargoToRoute(id, itinerary))
                                 ]
@@ -468,38 +522,51 @@ fn route_cargo_view(model: &Model, id: &str) -> Node<Msg> {
 
 fn change_destination_view(id: &str, context: &crate::Context) -> Node<Msg> {
     div![
-        h2![format!("Change destination of cargo {}", id)],
-        div![
-            label!["Destination"],
-            select![
-                option![attrs! {At::Value => AtValue::None}, "----"],
-                context
-                    .locations
-                    .iter()
-                    .map(|loc| option![attrs! {At::Value => loc}, loc]),
-                input_ev(Ev::Input, Msg::ChangeDestinationRequestDestinationChanged)
-            ],
+        h2![
+            C!["subtitle"],
+            format!("Change destination of cargo {}", id)
         ],
-        div![button!["Change", {
-            let id = id.to_string();
-            ev(Ev::Click, move |event| {
-                event.prevent_default();
-                Msg::ChangeDestination(id)
-            })
-        }]]
+        div![
+            C!["field", "has-addons"],
+            div![
+                C!["control"],
+                div![
+                    C!["select"],
+                    select![
+                        option![attrs! {At::Value => AtValue::None}, "----"],
+                        context
+                            .locations
+                            .iter()
+                            .map(|loc| option![attrs! {At::Value => loc}, loc]),
+                        input_ev(Ev::Input, Msg::ChangeDestinationRequestDestinationChanged)
+                    ]
+                ]
+            ],
+            div![
+                C!["control"],
+                button![C!["button"], "Change", {
+                    let id = id.to_string();
+                    ev(Ev::Click, move |event| {
+                        event.prevent_default();
+                        Msg::ChangeDestination(id)
+                    })
+                }]
+            ]
+        ]
     ]
 }
 
 fn itinerary_view(legs: &Vec<Leg>) -> Node<Msg> {
     table![
-        tr![
+        C!["table"],
+        thead![tr![
             th!["Voyage number"],
             th!["Load"],
             th!["Load Time"],
             th!["Unload"],
             th!["Unload Time"],
-        ],
-        legs.iter().map(|leg| {
+        ]],
+        tbody![legs.iter().map(|leg| {
             tr![
                 td![*leg.voyageNumber],
                 td![*leg.loadLocation],
@@ -507,6 +574,6 @@ fn itinerary_view(legs: &Vec<Leg>) -> Node<Msg> {
                 td![*leg.unloadLocation],
                 td![*leg.unloadTime],
             ]
-        })
+        })]
     ]
 }
