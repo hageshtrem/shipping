@@ -58,3 +58,7 @@ services:
       HANDLING_SVC_PORT: "5053"
     # volumes:
     #   - ./apigateway:/apigateway
+  frontend:
+    build: ./frontend
+    ports:
+      - "80:80"
