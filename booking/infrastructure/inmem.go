@@ -77,10 +77,14 @@ func NewLocationRepository() domain.LocationRepository {
 	}
 
 	r.locations[domain.SESTO] = domain.Stockholm
+	r.locations[domain.SEGOT] = domain.Goteborg
 	r.locations[domain.AUMEL] = domain.Melbourne
 	r.locations[domain.CNHKG] = domain.Hongkong
+	r.locations[domain.CNSHA] = domain.Shanghai
+	r.locations[domain.CNHGH] = domain.Hangzhou
 	r.locations[domain.USNYC] = domain.NewYork
 	r.locations[domain.USCHI] = domain.Chicago
+	r.locations[domain.USDAL] = domain.Dallas
 	r.locations[domain.JNTKO] = domain.Tokyo
 	r.locations[domain.DEHAM] = domain.Hamburg
 	r.locations[domain.NLRTM] = domain.Rotterdam
