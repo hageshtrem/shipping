@@ -26,6 +26,7 @@ pub struct Cargo {
     eta: String,
     nextExpectedActivity: String,
     arrivalDeadline: String,
+    isMisdirected: bool,
     events: Vec<Event>,
 }
 
@@ -114,16 +115,40 @@ fn view_cargo(cargo: &Cargo) -> Node<Msg> {
             "Cargo {} is now: {}",
             cargo.trackingId, cargo.statusText
         )],
-        p![format!(
-            "Estimated time to arrival in {}: {}",
-            cargo.destination, cargo.eta
-        )],
-        p![format!("{}", cargo.nextExpectedActivity)],
+        if cargo.isMisdirected {
+            vec![
+                p![format!(
+                    "Estimated time to arrival in {}: ?",
+                    cargo.destination
+                )],
+                p!["Cargo is misdirected"],
+            ]
+        } else {
+            vec![
+                p![format!(
+                    "Estimated time to arrival in {}: {}",
+                    cargo.destination, cargo.eta
+                )],
+                p![format!("{}", cargo.nextExpectedActivity)],
+            ]
+        },
         p!["Delivery History:"],
         ul![cargo
             .events
             .iter()
-            .map(|event| { li![*event.description] })
+            .map(|event| {
+                li![
+                    span![
+                        C!["icon"],
+                        if event.expected {
+                            i![C!["fas", "fa-check-circle"]]
+                        } else {
+                            i![C!["fas", "fa-times-circle"]]
+                        }
+                    ],
+                    *event.description
+                ]
+            })
             .collect::<Vec<Node<Msg>>>()]
     ]
 }
