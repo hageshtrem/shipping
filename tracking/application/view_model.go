@@ -14,6 +14,7 @@ type Cargo struct {
 	ETA                  time.Time
 	NextExpectedActivity string
 	ArrivalDeadline      time.Time
+	IsMisdirected        bool
 	Events               []Event
 }
 

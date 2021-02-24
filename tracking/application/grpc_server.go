@@ -59,6 +59,7 @@ func encodeCargo(c *Cargo) (*pb.Cargo, error) {
 		Eta:                  eta,
 		NextExpectedActivity: c.NextExpectedActivity,
 		ArrivalDeadline:      arrivalDeadline,
+		IsMisdirected:        c.IsMisdirected,
 		Events:               pbEvents,
 	}, nil
 }

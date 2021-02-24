@@ -36,6 +36,7 @@ func (eh *newCargoBookedEventHandler) Handle(event proto.Message) error {
 		ArrivalDeadline:      newCargo.GetArrivalDeadline().AsTime(),
 		ETA:                  delivery.GetEta().AsTime(),
 		NextExpectedActivity: nextExpectedActivity(delivery.GetNextExpectedActivity()),
+		IsMisdirected:        delivery.GetIsMisdirected(),
 	}
 	return eh.cargos.Store(&cargo)
 }
@@ -109,6 +110,7 @@ func fillDeliveryInfo(c *Cargo, d *booking.Delivery) {
 	c.StatusText = assembleStatusText(d)
 	c.NextExpectedActivity = nextExpectedActivity(d.GetNextExpectedActivity())
 	c.ETA = d.GetEta().AsTime()
+	c.IsMisdirected = d.GetIsMisdirected()
 	c.Events = append(c.Events, assembleEvent(d.GetLastEvent(), d.GetIsLastEventExpected()))
 }
 
