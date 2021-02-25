@@ -1,6 +1,7 @@
 package infrastructure
 
 import (
+	"sort"
 	"strings"
 	"sync"
 
@@ -9,15 +10,40 @@ import (
 	"github.com/pborman/uuid"
 )
 
+type orderedCargo struct {
+	id int
+	*domain.Cargo
+}
+
+type orderedCargoSlice []orderedCargo
+
+func (o orderedCargoSlice) Len() int {
+	return len(o)
+}
+
+func (o orderedCargoSlice) Less(i, j int) bool {
+	return o[i].id < o[j].id
+}
+
+func (o orderedCargoSlice) Swap(i, j int) {
+	o[i], o[j] = o[j], o[i]
+}
+
 type cargoRepository struct {
 	mtx    sync.RWMutex
-	cargos map[domain.TrackingID]*domain.Cargo
+	lastID int
+	cargos map[domain.TrackingID]orderedCargo
 }
 
 func (r *cargoRepository) Store(c *domain.Cargo) error {
 	r.mtx.Lock()
 	defer r.mtx.Unlock()
-	r.cargos[c.TrackingID] = c
+	if oc, ok := r.cargos[c.TrackingID]; ok {
+		r.cargos[c.TrackingID] = orderedCargo{oc.id, c}
+	} else {
+		r.cargos[c.TrackingID] = orderedCargo{r.lastID + 1, c}
+		r.lastID++
+	}
 	return nil
 }
 
@@ -25,7 +51,7 @@ func (r *cargoRepository) Find(id domain.TrackingID) (*domain.Cargo, error) {
 	r.mtx.RLock()
 	defer r.mtx.RUnlock()
 	if val, ok := r.cargos[id]; ok {
-		return val, nil
+		return val.Cargo, nil
 	}
 	return nil, domain.ErrUnknownCargo
 }
@@ -33,9 +59,14 @@ func (r *cargoRepository) Find(id domain.TrackingID) (*domain.Cargo, error) {
 func (r *cargoRepository) FindAll() []*domain.Cargo {
 	r.mtx.RLock()
 	defer r.mtx.RUnlock()
-	c := make([]*domain.Cargo, 0, len(r.cargos))
+	o := make(orderedCargoSlice, 0, len(r.cargos))
 	for _, val := range r.cargos {
-		c = append(c, val)
+		o = append(o, val)
+	}
+	sort.Sort(o)
+	c := make([]*domain.Cargo, 0, len(o))
+	for _, val := range o {
+		c = append(c, val.Cargo)
 	}
 	return c
 }
@@ -47,7 +78,8 @@ func (*cargoRepository) NextTrackingID() domain.TrackingID {
 // NewCargoRepository returns a new instance of a in-memory cargo repository.
 func NewCargoRepository() domain.CargoRepository {
 	return &cargoRepository{
-		cargos: make(map[domain.TrackingID]*domain.Cargo),
+		lastID: 0,
+		cargos: make(map[domain.TrackingID]orderedCargo),
 	}
 }
 

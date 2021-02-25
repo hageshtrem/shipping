@@ -1,5 +1,5 @@
 run: gen
-	docker-compose up -d
+	docker-compose up --build -d
 
 gen: gen-booking gen-pathfinder gen-tracking gen-handling gen-apigateway
 
