@@ -19,6 +19,7 @@ pub(crate) const HANDLING_API_URL: &str = "http://localhost:8080/handling/v1/car
 // ------ ------
 
 fn init(url: Url, orders: &mut impl Orders<Msg>) -> Model {
+    orders.stream(streams::window_event(Ev::Click, |_| Msg::HideMenu));
     orders.subscribe(Msg::UrlChanged);
     Model {
         ctx: Context {
@@ -31,6 +32,7 @@ fn init(url: Url, orders: &mut impl Orders<Msg>) -> Model {
         },
         base_url: url.to_base_url(),
         page: Page::init(url, orders),
+        menu_visible: false,
     }
 }
 
@@ -42,6 +44,7 @@ struct Model {
     ctx: Context,
     base_url: Url,
     page: Page,
+    menu_visible: bool,
 }
 
 // ------ Context ------
@@ -101,6 +104,8 @@ impl<'a> Urls<'a> {
 // ------ ------
 
 enum Msg {
+    ToggleMenu,
+    HideMenu,
     UrlChanged(subs::UrlChanged),
     BookingMsg(booking::Msg),
     TrackingMsg(tracking::Msg),
@@ -109,6 +114,14 @@ enum Msg {
 
 fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg>) {
     match msg {
+        Msg::ToggleMenu => model.menu_visible = not(model.menu_visible),
+        Msg::HideMenu => {
+            if model.menu_visible {
+                model.menu_visible = false;
+            } else {
+                orders.skip();
+            }
+        }
         Msg::UrlChanged(subs::UrlChanged(url)) => model.page = Page::init(url, orders),
         Msg::BookingMsg(msg) => {
             if let Page::Booking(model) = &mut model.page {
@@ -134,7 +147,7 @@ fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg>) {
 
 fn view(model: &Model) -> impl IntoNodes<Msg> {
     vec![
-        header(&model.base_url),
+        header(&model.base_url, model.menu_visible),
         div![
             C!["container"],
             match &model.page {
@@ -152,28 +165,59 @@ fn view(model: &Model) -> impl IntoNodes<Msg> {
     ]
 }
 
-fn header(base_url: &Url) -> Node<Msg> {
-    nav![div![
-        C!["navbar-menu"],
+fn header(base_url: &Url, menu_visible: bool) -> Node<Msg> {
+    nav![
+        C!["navbar"],
+        attrs! {
+            At::from("role") => "navigation",
+            At::AriaLabel => "main navigation"
+        },
         div![
-            C!["navbar-start"],
+            C!["navbar-brand"],
             a![
-                C!["navbar-item"],
-                attrs! { At::Href => Urls::new(base_url).booking().default() },
-                "Booking",
+                C!["navbar-item", "has-text-weight-bold", "is-size-3"],
+                attrs! {At::Href => base_url},
+                style! {St::BackgroundColor => "MediumSeaGreen"},
+                "S"
             ],
             a![
-                C!["navbar-item"],
-                attrs! { At::Href => Urls::new(base_url).tracking() },
-                "Tracking",
-            ],
-            a![
-                C!["navbar-item"],
-                attrs! { At::Href => Urls::new(base_url).handling() },
-                "Handling",
+                C!["navbar-burger", IF!(menu_visible => "is-active")],
+                attrs! {
+                    At::from("role") => "button",
+                    At::AriaLabel => "menu",
+                    At::AriaExpanded => menu_visible,
+                },
+                ev(Ev::Click, |event| {
+                    event.stop_propagation();
+                    Msg::ToggleMenu
+                }),
+                span![attrs! {At::AriaHidden => "true"}],
+                span![attrs! {At::AriaHidden => "true"}],
+                span![attrs! {At::AriaHidden => "true"}]
+            ]
+        ],
+        div![
+            C!["navbar-menu", IF!(menu_visible => "is-active")],
+            div![
+                C!["navbar-start"],
+                a![
+                    C!["navbar-item"],
+                    attrs! { At::Href => Urls::new(base_url).booking().default() },
+                    "Booking",
+                ],
+                a![
+                    C!["navbar-item"],
+                    attrs! { At::Href => Urls::new(base_url).tracking() },
+                    "Tracking",
+                ],
+                a![
+                    C!["navbar-item"],
+                    attrs! { At::Href => Urls::new(base_url).handling() },
+                    "Handling",
+                ]
             ]
         ]
-    ]]
+    ]
 }
 
 // ------ ------
