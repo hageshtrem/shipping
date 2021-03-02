@@ -17,7 +17,7 @@ type EventBus interface {
 	Close()
 }
 
-// EventService provides methods for publish specific events.
+// EventService used by Service and provides methods for publish specific events.
 type EventService interface {
 	NewCargoBooked(*domain.Cargo) error
 	DestinationChanged(*domain.Cargo) error

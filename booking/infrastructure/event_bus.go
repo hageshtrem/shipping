@@ -3,12 +3,12 @@ package infrastructure
 import (
 	"booking/application"
 	"fmt"
-	"log"
 	"reflect"
 	"strings"
 	"sync"
 
 	"github.com/isayme/go-amqp-reconnect/rabbitmq"
+	log "github.com/sirupsen/logrus"
 	"github.com/streadway/amqp"
 	"google.golang.org/protobuf/proto"
 )
@@ -31,6 +31,7 @@ type consumer struct {
 	handlers     map[string]handlerFunc
 	errChan      chan<- error
 	enough       chan struct{}
+	logger       *log.Entry
 }
 
 func (con *consumer) process(msgs <-chan amqp.Delivery) {
@@ -48,7 +49,7 @@ func (con *consumer) process(msgs <-chan amqp.Delivery) {
 				if !ok {
 					// There is no handler registered for the received message yet.
 					// So just return the message to the queue.
-					log.Printf("No handler for received message: %s", d.Type)
+					con.logger.Warnf("No handler for received message: %s", d.Type)
 					_ = d.Nack(false, true)
 					continue
 				}
@@ -83,7 +84,7 @@ func (con *consumer) processErr(err error) {
 }
 
 // NewEventBus returns an implementation of application.EventBus.
-func NewEventBus(uri string) (application.EventBus, error) {
+func NewEventBus(uri string, logger *log.Entry) (application.EventBus, error) {
 	conn, err := rabbitmq.Dial(uri)
 	if err != nil {
 		return nil, err
@@ -143,6 +144,7 @@ func NewEventBus(uri string) (application.EventBus, error) {
 		handlers:     make(map[string]handlerFunc),
 		errChan:      nil,
 		enough:       make(chan struct{}),
+		logger:       logger,
 	}
 	consumer.process(msgs)
 

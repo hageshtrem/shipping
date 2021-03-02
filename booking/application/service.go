@@ -4,7 +4,6 @@ package application
 import (
 	"booking/domain"
 	"errors"
-	"log"
 	"time"
 )
 
@@ -74,7 +73,7 @@ func (s *service) BookNewCargo(origin domain.UNLocode, destination domain.UNLoco
 	}
 
 	if err := s.eventService.NewCargoBooked(c); err != nil {
-		log.Printf("EVENT BUS ERROR: %v", err)
+		return "", err
 	}
 
 	return c.TrackingID, nil

@@ -6,6 +6,8 @@ import (
 	"os"
 	"testing"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 )
 
 var address string = "localhost:50051"
@@ -18,7 +20,7 @@ func init() {
 }
 
 func TestRoutingService(t *testing.T) {
-	s, err := NewRoutingService(address)
+	s, err := NewRoutingService(address, log.NewEntry(log.New()))
 	if err != nil {
 		t.Fatal(err)
 	}

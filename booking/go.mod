@@ -13,6 +13,7 @@ require (
 	github.com/mattn/go-isatty v0.0.12 // indirect
 	github.com/mdempsky/gocode v0.0.0-20200405233807-4acdcbdea79d // indirect
 	github.com/pborman/uuid v1.2.0
+	github.com/sirupsen/logrus v1.8.0 // indirect
 	github.com/streadway/amqp v1.0.0
 	github.com/uudashr/gopkgs/v2 v2.1.2 // indirect
 	golang.org/x/net v0.0.0-20201010224723-4f7140c49acb // indirect
