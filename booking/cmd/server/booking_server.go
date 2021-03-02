@@ -6,6 +6,7 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 	"time"
 
@@ -30,12 +31,13 @@ func initLogger(dir string) {
 	log.SetFormatter(&log.JSONFormatter{})
 
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
-		if err := os.Mkdir(dir, os.ModeDir|0666); err != nil {
+		if err := os.MkdirAll(dir, os.ModeDir|0666); err != nil {
 			log.Fatalf("Failed to initialize log file %s", err)
 		}
 	}
 
-	f, err := os.OpenFile(fmt.Sprintf("booking-%s.log", time.Now().Format("01.02.2006")), os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
+	filename := filepath.Join(dir, fmt.Sprintf("booking-%s.log", time.Now().Format("01.02.2006")))
+	f, err := os.OpenFile(filename, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
 	if err != nil {
 		log.Fatalf("Failed to initialize log file %s", err)
 	}

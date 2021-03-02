@@ -2,7 +2,6 @@ package application
 
 import (
 	"fmt"
-	"log"
 	"strings"
 	"time"
 	booking "tracking/pb/booking/pb"
@@ -15,18 +14,17 @@ type EventHandler interface {
 	Handle(event proto.Message) error
 }
 
-type newCargoBookedEventHandler struct {
+type cargoBookedEventHandler struct {
 	cargos CargoViewModelRepository
 }
 
 // NewCargoBookedEventHandler creates an event handler for CargoBooked event.
 func NewCargoBookedEventHandler(cargos CargoViewModelRepository) EventHandler {
-	return &newCargoBookedEventHandler{cargos}
+	return &cargoBookedEventHandler{cargos}
 }
 
-func (eh *newCargoBookedEventHandler) Handle(event proto.Message) error {
+func (eh *cargoBookedEventHandler) Handle(event proto.Message) error {
 	newCargo := event.(*booking.NewCargoBooked)
-	log.Printf("New Cargo booked: %v", newCargo)
 	delivery := newCargo.GetDelivery()
 	cargo := Cargo{
 		TrackingID:           newCargo.GetTrackingId(),
@@ -52,7 +50,6 @@ func NewCargoDestinationChangedEventHandler(cargos CargoViewModelRepository) Eve
 
 func (eh *cargoDestinationChangedEventHandler) Handle(event proto.Message) error {
 	e := event.(*booking.CargoDestinationChanged)
-	log.Printf("Cargo %s destination changed %s", e.TrackingId, e.Destination)
 	c, err := eh.cargos.Find(e.GetTrackingId())
 	if err != nil {
 		return err
@@ -73,7 +70,6 @@ func NewCargoToRouteAssignedEventHandler(cargos CargoViewModelRepository) EventH
 
 func (eh *cargoToRouteAssignedEventHandler) Handle(event proto.Message) error {
 	e := event.(*booking.CargoToRouteAssigned)
-	log.Printf("Cargo %s assigned to the route", e.GetTrackingId())
 	c, err := eh.cargos.Find(e.GetTrackingId())
 	if err != nil {
 		return err
@@ -95,7 +91,6 @@ func NewCargoWasHandledEventHandler(cargos CargoViewModelRepository) EventHandle
 
 func (eh *cargoWasHandledEventHandler) Handle(event proto.Message) error {
 	e := event.(*booking.CargoWasHandled)
-	log.Printf("Cargo was handled {%v}", e.Delivery)
 	c, err := eh.cargos.Find(e.GetTrackingId())
 	if err != nil {
 		return err

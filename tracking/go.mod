@@ -7,6 +7,7 @@ require (
 	github.com/golang/protobuf v1.4.2
 	github.com/isayme/go-amqp-reconnect v0.0.0-20180930040740-e71660afb5ca
 	github.com/pborman/uuid v1.2.1
+	github.com/sirupsen/logrus v1.8.0 // indirect
 	github.com/streadway/amqp v1.0.0
 	golang.org/x/net v0.0.0-20201010224723-4f7140c49acb // indirect
 	golang.org/x/sys v0.0.0-20201014080544-cc95f250f6bc // indirect
