@@ -4,7 +4,6 @@ use crate::domain::location::UNLocode;
 use crate::domain::voyage::VoyageNumber;
 use crate::Error;
 use chrono::prelude::*;
-use log::debug;
 use std::convert::{TryFrom, TryInto};
 use std::time::SystemTime;
 use tonic::{Code, Request, Response, Status};
@@ -27,7 +26,6 @@ impl<S: Service + Sync + Send + 'static> HandlingService for HandlingServiceImpl
         request: Request<RegisterHandlingEventRequest>,
     ) -> Result<Response<()>, Status> {
         let message = request.into_inner();
-        debug!("{:?}", message);
         let completed = match message.completed {
             Some(prost_timestamp) => {
                 let sys_time = SystemTime::try_from(prost_timestamp).unwrap();

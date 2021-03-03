@@ -40,7 +40,6 @@ pub struct EventBus {
 impl EventBus {
     pub async fn new(url: &str) -> DynResult<Self> {
         let conn = Connection::connect(url, ConnectionProperties::default()).await?;
-        info!("Connected");
         let channel = conn.create_channel().await?;
         channel
             .exchange_declare(
