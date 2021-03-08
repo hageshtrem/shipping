@@ -1,11 +1,15 @@
 version: "3.8"
 services:
+
   pathfinder:
     build: ./pathfinder
     ports:
       - "50051:50051"
     environment:
       PORT: ":50051"
+    volumes:
+      - pathfinder-log:/var/log/pathfinder
+
   rabbitmq:
     image: "rabbitmq:3-management"
     healthcheck:
@@ -16,6 +20,7 @@ services:
     ports:
       - "5672:5672"
       - "15672:15672"
+
   booking:
     build: ./booking
     restart: on-failure
@@ -30,6 +35,7 @@ services:
       RABBIT_URI: "amqp://guest:guest@rabbitmq:5672/%2f"
     volumes:
       - booking-log:/var/log/booking
+
   tracking:
     build: ./tracking
     restart: on-failure
@@ -40,6 +46,9 @@ services:
     environment:
       PORT: ":5052"
       RABBIT_URI: "amqp://guest:guest@rabbitmq:5672/%2f"
+    volumes:
+      - tracking-log:/var/log/tracking
+
   handling:
     build: ./handling
     restart: on-failure
@@ -50,6 +59,9 @@ services:
     environment:
       ADDR: "0.0.0.0:5053"
       RABBIT_URI: "amqp://guest:guest@rabbitmq:5672/%2f"
+    volumes:
+      - handling-log:/var/log/handling
+
   apigateway:
     build: ./apigateway
     depends_on:
@@ -63,12 +75,63 @@ services:
       BOOKING_SVC_PORT: "5051"
       TRACKING_SVC_PORT: "5052"
       HANDLING_SVC_PORT: "5053"
-    # volumes:
-    #   - ./apigateway:/apigateway
+
   frontend:
     build: ./frontend
     ports:
       - "80:80"
 
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.11.1
+    healthcheck:
+      test: ["CMD", "curl", "-s", "-f", "http://localhost:9200/_cat/health"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    environment:
+      discovery.type: single-node
+      network.host: 0.0.0.0
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:7.11.1
+    ports:
+      - "5044:5044"
+      - "5000:5000/tcp"
+      - "5000:5000/udp"
+      - "9600:9600"
+    depends_on:
+      - elasticsearch
+    volumes:
+      - ./elk/logstash.conf:/usr/share/logstash/pipeline/logstash.conf:ro
+
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:7.11.1
+    depends_on:
+      - elasticsearch
+    volumes:
+      - ./elk/filebeat.yml:/usr/share/filebeat/filebeat.yml
+      - pathfinder-log:/logs/pathfinder
+      - booking-log:/logs/booking
+      - tracking-log:/logs/tracking
+      - handling-log:/logs/handling
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.11.1
+    depends_on:
+      - elasticsearch
+    healthcheck:
+      test: ["CMD", "curl", "-s", "-f", "http://localhost:5601/api/status"]
+      interval: 3s
+      timeout: 3s
+      retries: 50
+    ports:
+      - 5601:5601
+
 volumes:
+  pathfinder-log:
   booking-log:
+  tracking-log:
+  handling-log:
