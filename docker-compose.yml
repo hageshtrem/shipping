@@ -1,6 +1,5 @@
 version: "3.8"
 services:
-
   pathfinder:
     build: ./pathfinder
     ports:
@@ -24,6 +23,11 @@ services:
   booking:
     build: ./booking
     restart: on-failure
+    healthcheck:
+      test: grpc_health_probe -addr=:5051
+      interval: 30s
+      timeout: 30s
+      retries: 3
     depends_on:
       - pathfinder
       - rabbitmq

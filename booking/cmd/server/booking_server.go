@@ -13,6 +13,8 @@ import (
 	"github.com/codingconcepts/env"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/health"
+	"google.golang.org/grpc/health/grpc_health_v1"
 
 	app "booking/application"
 	infra "booking/infrastructure"
@@ -81,6 +83,8 @@ func main() {
 	defer gs.GracefulStop()
 
 	pb.RegisterBookingServiceServer(gs, s)
+	grpc_health_v1.RegisterHealthServer(gs, health.NewServer())
+
 	errChan := make(chan error)
 	log.Infof("Service started at %s", envCfg.Port)
 	go func() {

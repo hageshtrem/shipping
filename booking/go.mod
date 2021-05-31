@@ -13,6 +13,6 @@ require (
 	golang.org/x/net v0.0.0-20201010224723-4f7140c49acb // indirect
 	golang.org/x/sys v0.0.0-20201014080544-cc95f250f6bc // indirect
 	google.golang.org/genproto v0.0.0-20201014134559-03b6142f0dc9
-	google.golang.org/grpc v1.33.0
+	google.golang.org/grpc v1.38.0
 	google.golang.org/protobuf v1.25.0
 )
