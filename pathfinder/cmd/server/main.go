@@ -15,6 +15,8 @@ import (
 
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/health"
+	"google.golang.org/grpc/health/grpc_health_v1"
 )
 
 const (
@@ -60,6 +62,7 @@ func main() {
 	mySrv := pathfinder.NewGRPCServer()
 	mySrv = pathfinder.NewLoggingServer(log.WithField("component", "pathfinder_service"), mySrv)
 	pb.RegisterPathfinderServiceServer(s, mySrv)
+	grpc_health_v1.RegisterHealthServer(s, health.NewServer())
 	go func() {
 		if err := s.Serve(lis); err != nil {
 			log.Fatalf("Error while starting server: %s", err)
