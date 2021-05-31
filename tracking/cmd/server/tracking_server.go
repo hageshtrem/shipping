@@ -17,6 +17,8 @@ import (
 	"github.com/codingconcepts/env"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/health"
+	"google.golang.org/grpc/health/grpc_health_v1"
 )
 
 type envConfig struct {
@@ -84,6 +86,8 @@ func main() {
 	defer gs.GracefulStop()
 
 	pb.RegisterTrackingServiceServer(gs, s)
+	grpc_health_v1.RegisterHealthServer(gs, health.NewServer())
+
 	log.Infof("Service started at %s", envCfg.Port)
 	go func() {
 		if err := gs.Serve(lis); err != nil {

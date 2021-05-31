@@ -48,6 +48,11 @@ services:
   tracking:
     build: ./tracking
     restart: on-failure
+    healthcheck:
+      test: grpc_health_probe -addr=:5052
+      interval: 30s
+      timeout: 30s
+      retries: 3
     depends_on:
       - rabbitmq
     ports:
