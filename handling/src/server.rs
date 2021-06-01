@@ -1,4 +1,4 @@
-use handling::application::grpc_server::HandlingServiceImpl;
+use handling::application::grpc_server::{HandlingServiceImpl, NamedHandlingServiceImpl};
 use handling::application::integration_events::{
     CargoDestinationChangedEventHandler, NewCargoBookedEventHandler,
 };
@@ -98,8 +98,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let addr = opt.addr.parse()?;
     let gservice = HandlingServiceImpl::new(srv);
 
+    // Health
+    let (mut health_reporter, health_service) = tonic_health::server::health_reporter();
+    health_reporter
+        .set_serving::<NamedHandlingServiceImpl>()
+        .await;
+
     info!("Server started at {}", opt.addr);
     Server::builder()
+        .add_service(health_service)
         .add_service(HandlingServiceServer::new(gservice))
         .serve(addr)
         .await?;

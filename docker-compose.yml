@@ -66,6 +66,11 @@ services:
   handling:
     build: ./handling
     restart: on-failure
+    healthcheck:
+      test: grpc_health_probe -addr=:5053 -service=handling.HandlingService
+      interval: 30s
+      timeout: 30s
+      retries: 3
     depends_on:
       - rabbitmq
     ports:

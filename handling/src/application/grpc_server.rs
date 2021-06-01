@@ -6,7 +6,7 @@ use crate::Error;
 use chrono::prelude::*;
 use std::convert::{TryFrom, TryInto};
 use std::time::SystemTime;
-use tonic::{Code, Request, Response, Status};
+use tonic::{transport::NamedService, Code, Request, Response, Status};
 
 use super::pb::{HandlingService, RegisterHandlingEventRequest};
 
@@ -55,4 +55,12 @@ impl<S: Service + Sync + Send + 'static> HandlingService for HandlingServiceImpl
         }
         Ok(Response::new(()))
     }
+}
+
+// For health checking
+// TODO: make HandlingService implementation useful for this case, remove nested type annotation.
+pub struct NamedHandlingServiceImpl;
+
+impl NamedService for NamedHandlingServiceImpl {
+    const NAME: &'static str = "handling.HandlingService";
 }
