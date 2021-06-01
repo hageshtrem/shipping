@@ -3,7 +3,7 @@ services:
   pathfinder:
     build: ./pathfinder
     healthcheck:
-      test: grpc_health_probe -addr=:50051
+      test: ["CMD", "grpc_health_probe", "-addr=:50051"]
       interval: 30s
       timeout: 30s
       retries: 3
@@ -17,7 +17,7 @@ services:
   rabbitmq:
     image: "rabbitmq:3-management"
     healthcheck:
-      test: rabbitmq-diagnostics -q ping
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
       interval: 30s
       timeout: 30s
       retries: 3
@@ -29,7 +29,7 @@ services:
     build: ./booking
     restart: on-failure
     healthcheck:
-      test: grpc_health_probe -addr=:5051
+      test: ["CMD", "grpc_health_probe", "-addr=:5051"]
       interval: 30s
       timeout: 30s
       retries: 3
@@ -49,7 +49,7 @@ services:
     build: ./tracking
     restart: on-failure
     healthcheck:
-      test: grpc_health_probe -addr=:5052
+      test: ["CMD", "grpc_health_probe", "-addr=:5052"]
       interval: 30s
       timeout: 30s
       retries: 3
@@ -67,7 +67,13 @@ services:
     build: ./handling
     restart: on-failure
     healthcheck:
-      test: grpc_health_probe -addr=:5053 -service=handling.HandlingService
+      test:
+        [
+          "CMD",
+          "grpc_health_probe",
+          "-addr=:5053",
+          "-service=handling.HandlingService",
+        ]
       interval: 30s
       timeout: 30s
       retries: 3
@@ -83,6 +89,11 @@ services:
 
   apigateway:
     build: ./apigateway
+    healthcheck:
+      test: ["CMD", "curl", "-s", "-f", "http://localhost:9901/server_info"]
+      interval: 30s
+      timeout: 30s
+      retries: 3
     depends_on:
       - booking
       - tracking
